@@ -69,10 +69,10 @@ El alta del cuadro también es transaccional. La escritura debe verificar el est
 | GET /api/v1/torneos | Lista de torneos EnCurso y Finalizado con ID, nombre, capacidad y estado. Lista vacía válida. |
 | GET /api/v1/torneos/{id}/cuadro | Datos del torneo, rondas ordenadas y partidos en orden. Cada plaza contiene nombre y equipo, o vacío. Incluye estado, marcador, ganador y campeón si existe. Devuelve 404 para torneo inexistente o Borrador. |
 
-La pantalla de cuadro consulta al abrir, al volver al primer plano y cada 5 segundos mientras está visible. Mantiene una sola consulta en curso, cancela al salir y ofrece reintento manual. El intervalo y el objetivo de 10 segundos se validarán en la demo. La última consulta correcta queda en memoria durante la sesión. Android recibe una proyección con los datos mínimos de cada jugador. Se propone usar datos ficticios durante la demo. Antes de usar nombres reales, el centro debe definir quién puede consultar el cuadro y en qué red.
+La pantalla de cuadro consulta al abrir, al volver al primer plano y cada 5 segundos mientras está visible. Mantiene una sola consulta en curso, cancela al salir y ofrece reintento manual. El intervalo y el objetivo de 10 segundos se validarán en la demo. La última consulta correcta queda en memoria durante la sesión. Android registra la hora local en que recibe y valida la respuesta. Esa hora alimenta «Actualizado a las» y se conserva durante una desconexión. El contrato no necesita un campo de hora. Android recibe una proyección con los datos mínimos de cada jugador. Se propone usar datos ficticios durante la demo. Antes de usar nombres reales, el centro debe definir quién puede consultar el cuadro y en qué red.
 
 ## Decisiones para revisar
 
-1. **Red:** confirmar que el móvil puede conectar con el Windows del gestor en el centro y acordar la configuración de acceso.
-2. **Correo:** se conserva la unicidad global del encargo. El mismo correo queda reservado por su inscripción incluso en otro torneo. Si se requiere reinscripción habitual, decidir si basta la unicidad por torneo o se necesita una entidad Jugador compartida.
-3. **Empates y correcciones:** propuesta de guardar el marcador y el ganador por penaltis, sin tanteo de la tanda. Confirmar si se necesita editar un resultado confirmado durante el torneo.
+1. **Red:** la propuesta LAN sigue pendiente. Validar conectividad y acordar la configuración de acceso en FC27-06, antes de conectar Android al servicio real.
+2. **Correo:** para la primera entrega se conserva la unicidad global del encargo. El mismo correo queda reservado por su inscripción incluso en otro torneo.
+3. **Empates y correcciones:** la primera entrega guarda el marcador y el ganador por penaltis, sin tanteo de la tanda. El gestor confirma el marcador antes de guardarlo. La corrección de resultados confirmados se reserva para una iteración que defina cómo revertir el avance.
