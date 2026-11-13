@@ -1,6 +1,6 @@
 # Entorno de desarrollo
 
-En el equipo de Cris se detectó el SDK .NET 10.0.403 y los paquetes de MAUI y Android. La comprobación `dotnet workload list` no pudo terminar en el entorno aislado por falta de acceso al administrador de servicios de Windows. La compilación queda por verificar.
+En el equipo de Cris, `dotnet workload list` confirmó .NET SDK 10.0.403 y las cargas `android` y `maui-windows`. La compilación inicial de Windows terminó con 0 errores y 0 advertencias. La compilación Android y el entorno de Juan quedan por verificar.
 
 Para verificar la base, ejecutar desde la raíz:
 
