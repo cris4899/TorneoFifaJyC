@@ -3,5 +3,8 @@
     <Project Path="src/FC27.Core/FC27.Core.csproj" />
     <Project Path="src/FC27.Data/FC27.Data.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FC27.Tests/FC27.Tests.csproj" />
+  </Folder>
   <Project Path="TorneoFifaJyC/TorneoFifaJyC.csproj" />
 </Solution>
