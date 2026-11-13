@@ -1,0 +1,10 @@
+# Instrucciones del proyecto FC27
+
+- **Ejecución.** La IA realiza directamente los pasos autorizados que pueda ejecutar, incluidos cambios, comprobaciones, publicación y gestión de GitHub según el turno y los permisos. Si una herramienta falla, intenta una alternativa razonable. Pide al usuario solo el paso concreto que requiera su intervención y explica qué lo impide. Reserva «Haz esto» y «Luego esto» para esos pasos.
+
+- **Identidad.** Antes de editar, identifica a la persona que está trabajando. Usa su confirmación en el chat y, si hay acceso a GitHub, verifica la cuenta con `gh api user --jq .login`. Las únicas cuentas del equipo son `cris4899` y `juanrr92`. Si hay duda o la cuenta no coincide, pide aclaración antes de editar o publicar. El nombre local de Git no identifica por sí solo a quien está trabajando.
+- **Inicio.** Lee [index.md](index.md) y consulta GitHub para comprobar la tarea, el responsable, los PR abiertos y sus dependencias. Trabaja en tareas de la persona identificada. Coordina cualquier cambio de responsable en GitHub antes de editar. Conserva los cambios locales ajenos.
+- **Ramas.** Sigue [docs/ramas.md](docs/ramas.md) y [docs/estructura.md](docs/estructura.md). Solo `cris4899` fusiona PR a `master`. Haz commits, pushes o acciones en GitHub cuando el usuario los autorice.
+- **Código.** Aplica [docs/comentarios.md](docs/comentarios.md) al escribir o revisar código. Ejecuta las comprobaciones de la tarea y comunica el resultado observado.
+- **Turno.** Solo trabaja una persona a la vez. Antes de editar, verifica el último relevo publicado y que da el turno a la persona identificada. Al cerrar el turno, registra el estado en GitHub y genera «Pásale este prompt a tu IA» según [docs/relevo.md](docs/relevo.md). Tras entregar el prompt, espera el siguiente relevo.
+- **Guía.** Usa el formato de [docs/inicio.md](docs/inicio.md). Empieza por «Haz esto», sigue con «Luego esto» si hay un segundo paso y añade «Prompt de relevo» solo cuando corresponda. Da el botón o comando exacto y el resultado esperado. Omite introducciones y recapitulaciones.
