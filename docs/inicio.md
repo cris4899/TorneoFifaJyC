@@ -21,19 +21,27 @@ o qué comando ejecutar y qué resultado debería ver. Si estoy bloqueado,
 dime quién puede desbloquearme y genera «Pásale este prompt a tu IA».
 ```
 
-La IA debe confirmar la identidad y buscar el ID FC27 en GitHub. Si el titular es la otra persona, ofrece una tarea propia disponible o prepara el relevo. Si ya existe un PR para esa tarea, recupera la rama existente y su contexto.
+La IA debe confirmar la identidad, el turno activo y el ID FC27. Si el turno es de la otra persona, espera a recibir su prompt. Si ya existe un PR para la tarea, recupera la rama existente y su contexto.
+
+### Formato de las instrucciones
+
+1. **Haz esto.** Indica quién actúa y da una acción concreta. Ejemplo para Cris: abre el [PR #1](https://github.com/cris4899/TorneoFifaJyC/pull/1) y comprueba que las observaciones estén resueltas.
+2. **Luego esto.** Da el siguiente paso y el resultado esperado. Si depende del primero, dilo en una frase. Ejemplo: si encuentras el resultado, anótalo en el SDD. Si falta, pide a Juan que lo publique.
+3. **Prompt de relevo.** Inclúyelo solo cuando corresponda según [el protocolo](relevo.md). Usa «Pásale este prompt a tu IA» y un bloque listo para copiar con el destinatario, el enlace y la siguiente acción.
+
+Da uno o dos pasos por turno cuando haga falta confirmar un resultado antes de seguir. Si se pueden ejecutar seguidos, agrúpalos en una lista breve.
 
 ## 3. Hacer visible el trabajo
 
 1. **Issue:** es la ficha de la tarea. Tiene ID FC27, responsable, dependencias y criterio de cierre. Antes de empezar, comprueba que las dependencias estén en `master`. Usa el issue existente si ya hay uno para ese ID.
 2. **Rama:** es tu copia de trabajo publicada. Créala desde `master` actualizado, con tu usuario e ID en el nombre. Sigue la [guía de ramas](ramas.md).
-3. **Pull request:** es la propuesta para incorporar el trabajo. Enlaza el issue, describe qué comprobaste y añade el [relevo](relevo.md). Puedes abrirlo como borrador. Cris revisa el cambio y lo fusiona cuando esté listo.
-4. **Bloqueo:** indica en el issue o PR qué falta y deja el prompt dirigido a la persona que puede desbloquearlo. El enlace de GitHub permite retomar desde otro equipo o chat.
+3. **Pull request:** enlaza el issue y describe qué comprobaste. Puedes abrirlo como borrador. Cris revisa y fusiona durante su turno.
+4. **Relevo:** consulta [cuándo preparar un prompt](relevo.md). Los avances y las dependencias se registran en GitHub para poder retomar desde otro equipo.
 
 GitHub guarda los documentos versionados, el código, el estado de las tareas, las decisiones, los PR y las instrucciones de entrega. Usad datos ficticios para ejemplos y evidencias. Guardad las credenciales y la base local con datos reales fuera del repositorio.
 
 ## 4. Orden de arranque
 
-1. **Cris** abre FC27-00 con esta documentación. **Juan** revisa el acceso y prepara la prueba de conexión Android–Windows.
-2. **Cris** fusiona FC27-00 cuando esté revisado y prepara FC27-01. **Juan** puede revisar el contrato y preparar el entorno mientras espera la base compartida.
-3. Con FC27-01 en `master`, **Cris** toma FC27-03 y **Juan** toma FC27-02. Después, Juan puede hacer FC27-04 con datos ficticios. El [plan](plan.md) indica el orden hasta la entrega.
+1. **Cris** toma el turno. La prueba Android–Windows queda aplazada hasta FC27-06.
+2. **Cris** cierra FC27-00 y completa FC27-01 y FC27-03 antes de pasar el turno a Juan.
+3. **Juan** prepara FC27-02 y FC27-04. Consulta los [turnos restantes](reparto.md) hasta la entrega.
