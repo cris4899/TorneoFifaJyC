@@ -1,0 +1,36 @@
+{
+  "torneo": { "id": 1, "nombre": "Copa DAM", "numeroParticipantes": 4, "estado": "EnCurso" },
+  "rondas": [
+    {
+      "orden": 1,
+      "nombre": "Semifinales",
+      "partidos": [
+        {
+          "id": 1, "posicion": 1,
+          "local": { "id": 1, "nombreJugador": "Alex", "equipoFC27": "Equipo A" },
+          "visitante": { "id": 2, "nombreJugador": "Dani", "equipoFC27": "Equipo B" },
+          "golesLocal": 2, "golesVisitante": 1, "estado": "Jugado", "ganadorId": 1
+        },
+        {
+          "id": 2, "posicion": 2,
+          "local": { "id": 3, "nombreJugador": "Sam", "equipoFC27": "Equipo C" },
+          "visitante": { "id": 4, "nombreJugador": "Eli", "equipoFC27": "Equipo D" },
+          "golesLocal": 0, "golesVisitante": 0, "estado": "Pendiente", "ganadorId": null
+        }
+      ]
+    },
+    {
+      "orden": 2,
+      "nombre": "Final",
+      "partidos": [
+        {
+          "id": 3, "posicion": 1,
+          "local": { "id": 1, "nombreJugador": "Alex", "equipoFC27": "Equipo A" },
+          "visitante": null,
+          "golesLocal": 0, "golesVisitante": 0, "estado": "Pendiente", "ganadorId": null
+        }
+      ]
+    }
+  ],
+  "campeon": null
+}
