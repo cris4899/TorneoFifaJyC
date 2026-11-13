@@ -12,6 +12,9 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" PrivateAssets="all" />
     <ProjectReference Include="../../src/FC27.Core/FC27.Core.csproj" />
     <ProjectReference Include="../../src/FC27.Data/FC27.Data.csproj" />
+    <!-- La lógica de presentación de consulta no depende de MAUI, así que se
+         compila aquí para probarla sin el proyecto Android. -->
+    <Compile Include="../../TorneoFifaJyC/Features/Consulta/ConsultaCuadro.cs" Link="Consulta/ConsultaCuadro.cs" />
     <None Update="cuadro-ejemplo.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
