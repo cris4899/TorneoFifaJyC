@@ -2,9 +2,9 @@
 
 ## Cuándo generar el mensaje
 
-1. Al terminar una tarea, indica si el cambio está local, en un PR abierto o fusionado. Identifica la primera tarea que queda habilitada y a quién corresponde.
-2. Si una dependencia te bloquea, indica qué PR, archivo o decisión falta y quién puede desbloquearla. Si tienes otra tarea disponible, puedes seguir con ella después de preparar el relevo.
-3. Entrega el bloque listo para pegar. Si hay PR, añade el mismo relevo a su descripción cuando estés autorizado a editarla. Para un bloqueo sin PR, conserva el relevo en el canal de coordinación que use el equipo.
+1. Comprueba quién tiene el turno en el último relevo de GitHub. Al empezar, registra «Turno activo: @usuario» en el issue o PR del relevo.
+2. Completa las tareas del [turno](reparto.md). Al terminar, o si el compañero debe resolver un bloqueo, registra «Turno entregado a @usuario» con los PR, pruebas y siguiente paso. Genera un único prompt para que se lo pasen al compañero.
+3. El destinatario empieza tras recibir el prompt y verificar el relevo en GitHub. Quien lo entrega espera su siguiente turno. Al cerrar el proyecto, el último prompt comunica la entrega y sus referencias.
 
 Un PR abierto permite revisar y preparar la siguiente tarea. Su fusión permite partir de ese trabajo en una rama nueva. El estado y las pruebas se escriben según lo observado.
 
@@ -30,31 +30,26 @@ parte de master actualizado, usa una rama propia y sigue los pasos y las
 pruebas de docs/plan.md. Respeta las rutas de docs/estructura.md y las reglas
 de comentarios de docs/comentarios.md. Solo cris4899 fusiona a master.
 
-Al cerrar la tarea o detectar otro bloqueo, devuelve un nuevo mensaje
+Al cerrar el turno o necesitar que el compañero resuelva un bloqueo, devuelve un mensaje
 «Pásale este prompt a tu IA» con las referencias y el siguiente paso.
 ```
 
 La IA que genera el relevo sustituye los marcadores por hechos concretos. Si falta un dato, escribe qué falta y cómo verificarlo.
 
-## Primer relevo listo para Juan
+
+## Primer relevo de desarrollo para Juan
+
+Cris entrega este prompt cuando FC27-01 y FC27-03 estén en master.
+Completa las referencias antes de enviarlo.
 
 **Pásale este prompt a tu IA**
 
 ```text
-Colaboras como juanrr92 en https://github.com/cris4899/TorneoFifaJyC.
-Ayúdame a revisar y desbloquear FC27-00 junto con cris4899. Comprueba si tengo
-acceso y si index.md y docs/plan.md están en master o en el PR de documentación.
-Si aún están solo en local, pídele a Cris el enlace cuando publique el PR.
-
-Cuando puedas leerlos, revisa docs/sdd.md y prepara para Cris una propuesta
-breve sobre cómo conectar Android al Windows de la demo, qué necesita el
-contrato de lectura y cómo probarlo en la red del centro. Señala las decisiones
-que requieren acuerdo. Después de que Cris fusione FC27-01, mi primera
-tarea de desarrollo es FC27-02 (cuadro), seguida de FC27-04 (Android con
-datos ficticios). En esta fase documental, mantén el trabajo en revisión
-y preparación. Solo cris4899 fusiona los PR a master.
-
-Al terminar la revisión o si te falta un acceso o un PR, devuelve un mensaje
-«Pásale este prompt a tu IA» dirigido a la IA de Cris. Incluye la evidencia,
-la decisión pendiente y el siguiente paso concreto.
+Soy juanrr92. He recibido el turno de Cris en cris4899/TorneoFifaJyC.
+Haz esto: verifica mi cuenta y que FC27-01 y FC27-03 estén en master.
+Lee index.md y completa FC27-02 en una rama propia. Abre su PR con las pruebas.
+Luego esto: prepara FC27-04 con datos ficticios en otra rama y abre su PR.
+La prueba de red se hará en FC27-06.
+Prompt de relevo: devuelve a cris4899 los enlaces a ambos PR, los resultados
+de las pruebas y el siguiente paso, FC27-05. Espera el siguiente turno.
 ```
