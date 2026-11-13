@@ -1,0 +1,8 @@
+# Instrucciones del proyecto FC27
+
+- **Identidad.** Antes de editar, identifica a la persona que está trabajando. Usa su confirmación en el chat y, si hay acceso a GitHub, verifica la cuenta con `gh api user --jq .login`. Las únicas cuentas del equipo son `cris4899` y `juanrr92`. Si hay duda o la cuenta no coincide, pide aclaración antes de editar o publicar. El nombre local de Git no identifica por sí solo a quien está trabajando.
+- **Inicio.** Lee [index.md](index.md) y consulta GitHub para comprobar la tarea, el responsable, los PR abiertos y sus dependencias. Trabaja en tareas de la persona identificada. Coordina cualquier cambio de responsable en GitHub antes de editar. Conserva los cambios locales ajenos.
+- **Ramas.** Sigue [docs/ramas.md](docs/ramas.md) y [docs/estructura.md](docs/estructura.md). Solo `cris4899` fusiona PR a `master`. Haz commits, pushes o acciones en GitHub cuando el usuario los autorice.
+- **Código.** Aplica [docs/comentarios.md](docs/comentarios.md) al escribir o revisar código. Ejecuta las comprobaciones de la tarea y comunica el resultado observado.
+- **Relevo.** Al terminar una tarea o quedar a la espera de otra, entrega en tu respuesta un mensaje encabezado «Pásale este prompt a tu IA» con un bloque listo para copiar. Usa [docs/relevo.md](docs/relevo.md) y rellena los datos reales. El usuario decide cuándo compartir el mensaje.
+- **Guía.** Explica cada paso para alguien que empieza. Indica quién lo hace, dónde actuar, qué escribir y qué debería ver. Antes de cerrar, sugiere una tarea disponible para esa persona o identifica el bloqueo con su enlace en GitHub.
