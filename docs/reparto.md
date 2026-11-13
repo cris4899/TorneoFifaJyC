@@ -4,7 +4,7 @@
 
 | ID | Responsable | Entrega y comprobación | Depende de |
 | --- | --- | --- | --- |
-| FC27-00 | cris4899 | Integrar la documentación inicial. Acordar con Juan el contrato de consulta, las reglas pendientes y la prueba de red. | — |
+| FC27-00 | cris4899 | Integrar la documentación inicial. Cerrar la revisión del contrato y las reglas. La prueba de red pasa a FC27-06. | — |
 | FC27-01 | cris4899 | Preparar solución, proyectos, entidades, contratos compartidos y composición MAUI. Verificar que ambos pueden trabajar desde el mismo punto de partida. | FC27-00 |
 | FC27-02 | juanrr92 | Desarrollar el sorteo, cálculo del avance y resolución del ganador como lógica de dominio. Cubrir los cinco tamaños y los desempates con pruebas unitarias. | FC27-01 |
 | FC27-03 | cris4899 | Implementar SQLite y repositorios, altas y validaciones. Probar unicidad, cupo, claves foráneas y aislamiento por torneo. | FC27-01 |
@@ -14,6 +14,15 @@
 | FC27-07 | juanrr92 | Completar diagramas, manual Android y evidencias de consulta para la memoria. | FC27-06 |
 | FC27-08 | cris4899 | Completar manual Windows, infraestructura, análisis de mercado, evidencias y ensamblaje de la memoria final. | FC27-06, FC27-07 |
 
-Tras FC27-01, Cris puede trabajar en persistencia mientras Juan trabaja en dominio y Android. En FC27-04, Juan usa datos ficticios ajustados al contrato acordado, de modo que puede avanzar antes de que exista la API.
+## Turnos exclusivos
 
-**Entrega entre personas:** cada PR indica qué contrato, ruta o instrucción consume la siguiente tarea. Si ese contrato cambia, Cris y Juan acuerdan el cambio y lo integran antes de modificar los dos lados.
+| Turno | Persona y trabajo | Entrega |
+| --- | --- | --- |
+
+| 1 | **Cris.** Cerrar FC27-00, preparar e integrar FC27-01 y FC27-03. | Base compartida y SQLite en `master`. |
+| 2 | **Juan.** Preparar y publicar FC27-02 y FC27-04 en ramas separadas. Puede terminar ambos PR antes de devolver el turno. | Los dos PR, pruebas y datos de ejemplo para Cris. |
+| 3 | **Cris.** Revisar y fusionar los PR del turno anterior. Completar e integrar FC27-05. | Gestión Windows, fuente de consulta y datos de prueba para Juan. |
+| 4 | **Juan.** Preparar FC27-06 y verificarlo en su rama. Con esa versión prepara FC27-07 en una rama dependiente. | PR, capturas y manual Android para Cris. Cris integra primero FC27-06 y después FC27-07. |
+| 5 | **Cris.** Revisar y fusionar los PR de Juan y completar FC27-08. | Memoria y versión verificada. Comunica a Juan el cierre. |
+
+Cada tarea conserva su rama, issue y PR. Solo la persona del turno trabaja en el proyecto. Si Cris detecta cambios necesarios en un PR de Juan, le devuelve el turno con un prompt que enumera las correcciones. Juan devuelve el turno al publicar los ajustes.
