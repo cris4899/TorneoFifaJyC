@@ -15,8 +15,8 @@
 - Información que necesita la siguiente tarea
 - Reglas o contratos explicados en comentarios de código, si aplica
 
-## Relevo
+## Relevo (cuando corresponda)
 
 **Pásale este prompt a tu IA**
 
-Pega el prompt completo de acuerdo con `docs/relevo.md`. Incluye destinatario, estado del PR, pruebas, dependencia y siguiente acción.
+Usa `docs/relevo.md` cuando entregues el turno al compañero. Incluye los PR y pruebas de todo el turno.
