@@ -17,6 +17,8 @@ En otra consola ejecuta `Invoke-RestMethod http://127.0.0.1:5080/api/v1/torneos`
 
 ## Android
 
+La entrega se valida en el emulador Pixel 7 (API 36). Por decisión del equipo, la prueba con un móvil físico queda fuera del alcance de esta entrega. La conexión con la API se comprobó mediante ADB y localhost.
+
 Sigue el [manual Android](manual-android.md). Sin una dirección en `ConsultaConfig.BaseAddress`, la pantalla inicia con datos ficticios. Para la prueba real, acuerda una dirección accesible desde el dispositivo y configura esa URI y el ID real del torneo en `ConsultaConfig` antes de compilar. Usa HTTPS con un certificado que el dispositivo pueda validar.
 
 ## Evidencias
@@ -26,5 +28,5 @@ Sigue el [manual Android](manual-android.md). Sin una dirección en `ConsultaCon
 | Windows hasta campeón y reapertura | Verificado en FC27-05. |
 | API y cliente de consulta | 53 pruebas correctas en FC27-06. |
 | Compilación Android | Verificada en FC27-06, sin errores ni advertencias. |
-| P09–P11: actualización, recuperación, nombres largos y TalkBack | Pendiente de ejecutar con Android. |
-| Capturas Android | Pendientes según el [plan](manual-android.md#plan-de-capturas-datos-ficticios). |
+| P09–P11: actualización, recuperación, nombres largos y TalkBack | En emulador: actualización en 4,99 s tras escribir en SQLite, estado vacío, recuperación y lectura de la final con TalkBack. El nombre largo se comprobó en pantalla y en el árbol de accesibilidad. |
+| Capturas Android | [Seis capturas y registro de verificación](capturas/verificacion-android.md). |
