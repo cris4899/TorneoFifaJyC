@@ -67,6 +67,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="../src/FC27.Core/FC27.Core.csproj" />
+		<ProjectReference Include="../src/FC27.Data/FC27.Data.csproj" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" />
 	</ItemGroup>
 
 	<ItemGroup>
