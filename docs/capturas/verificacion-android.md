@@ -15,3 +15,7 @@ En el mismo emulador y con ADB reverse, detuve el proceso de la API de Windows. 
 ## Latencia de actualización
 
 En Pixel 7 API 36 con túnel ADB y API en Windows, se confirmó una final 3–1 en una transacción SQL sobre una copia temporal de la base. Android pasó de En curso a mostrar el campeón en 4,99 s, incluida la lectura del árbol de accesibilidad. Cumplió el objetivo de 10 s en este entorno. La prueba mide desde la escritura en SQLite y queda por repetir desde la interfaz Windows con un móvil en la red de entrega.
+
+## Estado vacío y nombre largo
+
+En Pixel 7 API 36, el cuadro mostró «No hay cuadro disponible todavía» cuando el torneo de la copia temporal quedó en borrador. Tras restaurar el torneo finalizado, el árbol de accesibilidad expuso el nombre ficticio largo completo en la descripción del partido y en el campeón. TalkBack estaba instalado e inactivo. Queda verificar la lectura en voz y el ajuste visual, además de tomar las capturas y probar la red física.
