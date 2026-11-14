@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/FC27.Api/FC27.Api.csproj" />
     <Project Path="src/FC27.Core/FC27.Core.csproj" />
     <Project Path="src/FC27.Data/FC27.Data.csproj" />
   </Folder>
