@@ -19,3 +19,7 @@ En Pixel 7 API 36 con túnel ADB y API en Windows, se confirmó una final 3–1 
 ## Estado vacío y nombre largo
 
 En Pixel 7 API 36, el cuadro mostró «No hay cuadro disponible todavía» cuando el torneo de la copia temporal quedó en borrador. Tras restaurar el torneo finalizado, el árbol de accesibilidad expuso el nombre ficticio largo completo en la descripción del partido y en el campeón. TalkBack estaba instalado e inactivo. Queda verificar la lectura en voz y el ajuste visual, además de tomar las capturas y probar la red física.
+
+## Confirmación de TalkBack
+
+El 14 de noviembre, Cris confirmó que escuchó TalkBack al enfocar la tarjeta de la final en el Pixel 7 emulado. El árbol de accesibilidad de esa tarjeta incluía ambos nombres, el 3–1 y el ganador. La comprobación auditiva se realizó con los nombres de la final; el nombre largo se verificó por separado en pantalla y en el árbol de accesibilidad. La prueba en la red de entrega con un móvil físico sigue pendiente.
