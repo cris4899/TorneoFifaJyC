@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../FC27.Core/FC27.Core.csproj" />
+    <ProjectReference Include="../FC27.Data/FC27.Data.csproj" />
+  </ItemGroup>
+</Project>
