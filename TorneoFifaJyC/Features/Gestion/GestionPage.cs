@@ -12,11 +12,19 @@ public sealed class GestionPage : ContentPage
     private readonly VerticalStackLayout _panel = new() { Padding = 24, Spacing = 12 };
     private readonly DbContextOptions<TorneoDbContext> _options;
     private int? _seleccion;
+    private Seccion _seccion = Seccion.Inscritos;
+    private enum Seccion { Inscritos, Partidos, Cuadro }
+
+    private static readonly Color Fondo = Color.FromArgb("#151719");
+    private static readonly Color Superficie = Color.FromArgb("#24282C");
+    private static readonly Color Claro = Color.FromArgb("#F2F4F5");
+    private static readonly Color Lima = Color.FromArgb("#C6F653");
     private bool _ocupada;
 
     public GestionPage()
     {
-        Title = "Torneos";
+        Title = "Mis torneos";
+        BackgroundColor = Fondo;
         var conexion = new SqliteConnectionStringBuilder
         {
             DataSource = Path.Combine(FileSystem.AppDataDirectory, "fc27.db"),
@@ -62,37 +70,83 @@ public sealed class GestionPage : ContentPage
     {
         var torneos = await db.Torneos.AsNoTracking().OrderBy(t => t.Nombre).ToListAsync();
         _panel.Clear();
-        Texto("Torneos", 26);
-        var nombre = Campo("Nombre del torneo");
-        var capacidad = new Picker { Title = "Capacidad", ItemsSource = Cuadro.CapacidadesValidas.ToArray(), SelectedIndex = 0 };
-        _panel.Add(capacidad);
-        Accion("Crear torneo", async contexto =>
-        {
-            var torneo = await new InscripcionesSqlite(contexto).CrearAsync(nombre.Text,
-                (int)capacidad.SelectedItem, CancellationToken.None);
-            _seleccion = torneo.Id;
-        });
-        foreach (var torneo in torneos)
-            Accion($"{torneo.Nombre} · {torneo.Estado}", _ =>
-            {
-                _seleccion = torneo.Id;
-                return Task.CompletedTask;
-            });
-
         var seleccionado = torneos.SingleOrDefault(t => t.Id == _seleccion);
-        if (seleccionado is null) return;
-        Texto(seleccionado.Nombre, 22);
-        if (seleccionado.Estado == EstadoTorneo.Borrador)
+        if (seleccionado is null)
+        {
+            Texto("Mis torneos", 32);
+            if (torneos.Count == 0) Texto("Todavía no hay torneos.", 16);
+            foreach (var torneo in torneos)
+            {
+                Accion($"{torneo.Nombre} · {Estado(torneo.Estado)} · {torneo.NumeroParticipantes} plazas", _ =>
+                {
+                    Abrir(torneo);
+                    return Task.CompletedTask;
+                });
+            }
+
+            Texto("Nuevo torneo", 22);
+            var nombre = Campo("Nombre del torneo");
+            var capacidad = new Picker
+            {
+                Title = "Capacidad", ItemsSource = Cuadro.CapacidadesValidas.ToArray(), SelectedIndex = 0,
+                BackgroundColor = Superficie, TextColor = Claro, TitleColor = Claro
+            };
+            SemanticProperties.SetDescription(capacidad, "Capacidad del torneo");
+            _panel.Add(capacidad);
+            Accion("Crear torneo", async contexto =>
+                Abrir(await new InscripcionesSqlite(contexto).CrearAsync(nombre.Text,
+                    (int)capacidad.SelectedItem, CancellationToken.None)), principal: true);
+            return;
+        }
+
+        Accion("Volver a Mis torneos", _ =>
+        {
+            _seleccion = null;
+            return Task.CompletedTask;
+        });
+        Texto(seleccionado.Nombre, 32);
+        Texto(Estado(seleccionado.Estado), 16);
+        var navegacion = new HorizontalStackLayout { Spacing = 8 };
+        foreach (var seccion in Enum.GetValues<Seccion>())
+        {
+            var boton = Boton(seccion.ToString(), _ =>
+            {
+                _seccion = seccion;
+                return Task.CompletedTask;
+            }, seccion == _seccion);
+            boton.IsEnabled = seleccionado.Estado != EstadoTorneo.Borrador || seccion == Seccion.Inscritos;
+            if (seccion == _seccion)
+                SemanticProperties.SetDescription(boton, $"{seccion}, sección actual");
+            navegacion.Add(boton);
+        }
+        _panel.Add(navegacion);
+        if (_seccion == Seccion.Inscritos)
             await MostrarInscripcionesAsync(db, seleccionado);
         else
             await MostrarCuadroAsync(db, seleccionado);
     }
+
+    private void Abrir(Torneo torneo)
+    {
+        _seleccion = torneo.Id;
+        _seccion = torneo.Estado == EstadoTorneo.Borrador ? Seccion.Inscritos : Seccion.Partidos;
+    }
+
+    private static string Estado(EstadoTorneo estado) =>
+        estado == EstadoTorneo.EnCurso ? "En curso" : estado.ToString();
 
     private async Task MostrarInscripcionesAsync(TorneoDbContext db, Torneo torneo)
     {
         var inscritos = await db.Participantes.AsNoTracking().Where(p => p.TorneoId == torneo.Id)
             .OrderBy(p => p.NombreJugador).ToListAsync();
         Texto($"{inscritos.Count} de {torneo.NumeroParticipantes} plazas", 16);
+        if (torneo.Estado != EstadoTorneo.Borrador)
+        {
+            foreach (var inscrito in inscritos)
+                Texto($"{inscrito.NombreJugador} · {inscrito.EquipoFC27}", 16);
+            return;
+        }
+
         var nombre = Campo("Nombre del jugador");
         var correo = Campo("Correo");
         correo.Keyboard = Keyboard.Email;
@@ -126,8 +180,11 @@ public sealed class GestionPage : ContentPage
                     await new InscripcionesSqlite(contexto).RetirarInscripcionAsync(torneo.Id, inscrito.Id, CancellationToken.None);
             });
         }
-        var iniciar = Accion("Sortear e iniciar", contexto =>
-            new CuadroSqlite(contexto).IniciarAsync(torneo.Id, CancellationToken.None));
+        var iniciar = Accion("Sortear e iniciar", async contexto =>
+        {
+            await new CuadroSqlite(contexto).IniciarAsync(torneo.Id, CancellationToken.None);
+            _seccion = Seccion.Partidos;
+        }, principal: true);
         iniciar.IsEnabled = inscritos.Count == torneo.NumeroParticipantes;
     }
 
@@ -150,7 +207,7 @@ public sealed class GestionPage : ContentPage
                 else
                 {
                     Texto(cruce, 16);
-                    if (partido.Local is { } local && partido.Visitante is { } visitante)
+                    if (_seccion == Seccion.Partidos && partido.Local is { } local && partido.Visitante is { } visitante)
                         Accion($"Registrar resultado: {local.NombreJugador} — {visitante.NombreJugador}",
                             contexto => RegistrarAsync(contexto, torneo.Id, partido.Id, local, visitante));
                 }
@@ -194,22 +251,33 @@ public sealed class GestionPage : ContentPage
     private static string Nombre(JugadorCuadro? jugador) =>
         jugador is null ? "Por determinar" : $"{jugador.NombreJugador} ({jugador.EquipoFC27})";
 
-    private void Texto(string texto, double tamano) => _panel.Add(new Label { Text = texto, FontSize = tamano });
+    private void Texto(string texto, double tamano) => _panel.Add(new Label { Text = texto, FontSize = tamano, TextColor = Claro });
 
     private Entry Campo(string etiqueta)
     {
         Texto(etiqueta, 14);
-        var campo = new Entry();
+        var campo = new Entry { BackgroundColor = Superficie, TextColor = Claro };
         SemanticProperties.SetDescription(campo, etiqueta);
         _panel.Add(campo);
         return campo;
     }
 
-    private Button Accion(string texto, Func<TorneoDbContext, Task> accion)
+    private Button Accion(string texto, Func<TorneoDbContext, Task> accion, bool principal = false)
     {
-        var boton = new Button { Text = texto };
-        boton.Clicked += async (_, _) => await EjecutarAsync(accion);
+        var boton = Boton(texto, accion, principal);
         _panel.Add(boton);
+        return boton;
+    }
+
+    private Button Boton(string texto, Func<TorneoDbContext, Task> accion, bool principal)
+    {
+        var boton = new Button
+        {
+            Text = texto, CornerRadius = 8, MinimumHeightRequest = 42,
+            BackgroundColor = principal ? Lima : Superficie,
+            TextColor = principal ? Fondo : Claro
+        };
+        boton.Clicked += async (_, _) => await EjecutarAsync(accion);
         return boton;
     }
 }
