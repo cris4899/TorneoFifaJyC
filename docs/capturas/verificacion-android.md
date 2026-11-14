@@ -11,3 +11,7 @@ Quedan validar la red real con un dispositivo, medir la actualización tras conf
 ## Desconexión y recuperación
 
 En el mismo emulador y con ADB reverse, detuve el proceso de la API de Windows. Android conservó los marcadores y el campeón, mostró «Sin conexión. Se muestra la última versión.» y ofreció «Reintentar». Al reiniciar la API, el cuadro volvió a consultarse automáticamente y el aviso desapareció. Esto verifica P10 en el entorno local, excepto el escenario de lista vacía. Quedan la latencia al registrar un resultado, TalkBack y la red física.
+
+## Latencia de actualización
+
+En Pixel 7 API 36 con túnel ADB y API en Windows, se confirmó una final 3–1 en una transacción SQL sobre una copia temporal de la base. Android pasó de En curso a mostrar el campeón en 4,99 s, incluida la lectura del árbol de accesibilidad. Cumplió el objetivo de 10 s en este entorno. La prueba mide desde la escritura en SQLite y queda por repetir desde la interfaz Windows con un móvil en la red de entrega.
