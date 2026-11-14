@@ -218,32 +218,86 @@ public sealed class GestionPage : ContentPage
     private async Task RegistrarAsync(TorneoDbContext db, int torneoId, int partidoId,
         JugadorCuadro local, JugadorCuadro visitante)
     {
-        var textoLocal = await DisplayPromptAsync("Marcador", $"Goles de {Nombre(local)}", keyboard: Keyboard.Numeric);
-        if (textoLocal is null) return;
-        var textoVisitante = await DisplayPromptAsync("Marcador", $"Goles de {Nombre(visitante)}", keyboard: Keyboard.Numeric);
-        if (textoVisitante is null) return;
-        if (!int.TryParse(textoLocal, out var golesLocal) || golesLocal < 0 ||
-            !int.TryParse(textoVisitante, out var golesVisitante) || golesVisitante < 0)
-            throw new ArgumentException("Introduce goles enteros no negativos.");
-
-        int? penaltis = null;
-        if (golesLocal == golesVisitante)
+        var formulario = new ContentPage { Title = "Registrar resultado", BackgroundColor = Fondo };
+        var campos = new VerticalStackLayout { Padding = 24, Spacing = 12 };
+        var golesLocal = new Entry { Keyboard = Keyboard.Numeric, BackgroundColor = Superficie, TextColor = Claro };
+        var golesVisitante = new Entry { Keyboard = Keyboard.Numeric, BackgroundColor = Superficie, TextColor = Claro };
+        var penaltis = new Picker
         {
-            var opcion = await DisplayActionSheetAsync("Ganador por penaltis", "Cancelar", null,
-                $"Local: {Nombre(local)}", $"Visitante: {Nombre(visitante)}");
-            penaltis = opcion switch
-            {
-                var valor when valor == $"Local: {Nombre(local)}" => local.Id,
-                var valor when valor == $"Visitante: {Nombre(visitante)}" => visitante.Id,
-                _ => null
-            };
-            if (penaltis is null) return;
+            Title = "Ganador por penaltis", BackgroundColor = Superficie, TextColor = Claro, TitleColor = Claro,
+            ItemsSource = new[] { Nombre(local), Nombre(visitante) }, IsVisible = false
+        };
+        var error = new Label { TextColor = Claro };
+        var guardar = new Button { Text = "Revisar marcador", BackgroundColor = Lima, TextColor = Fondo };
+        var cancelar = new Button { Text = "Cancelar", BackgroundColor = Superficie, TextColor = Claro };
+        var respuesta = new TaskCompletionSource<ResultadoPartido?>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        void AgregarMarcador(JugadorCuadro jugador, Entry campo)
+        {
+            var etiqueta = $"Goles de {Nombre(jugador)}";
+            campos.Add(new Label { Text = etiqueta, TextColor = Claro });
+            SemanticProperties.SetDescription(campo, etiqueta);
+            campos.Add(campo);
         }
 
-        var resultado = new ResultadoPartido(golesLocal, golesVisitante, penaltis);
+        bool LeerGoles(out int local, out int visitante)
+        {
+            var localValido = int.TryParse(golesLocal.Text, out local) && local >= 0;
+            var visitanteValido = int.TryParse(golesVisitante.Text, out visitante) && visitante >= 0;
+            return localValido && visitanteValido;
+        }
+
+        void ActualizarDesempate(object? sender, TextChangedEventArgs e)
+        {
+            // La elección solo vale para el empate que se está editando.
+            penaltis.SelectedIndex = -1;
+            penaltis.IsVisible = LeerGoles(out var local, out var visitante) && local == visitante;
+            error.Text = "";
+        }
+
+        golesLocal.TextChanged += ActualizarDesempate;
+        golesVisitante.TextChanged += ActualizarDesempate;
+        guardar.Clicked += (_, _) =>
+        {
+            if (!LeerGoles(out var localGoles, out var visitanteGoles))
+            {
+                error.Text = "Introduce goles enteros no negativos en ambos campos.";
+                return;
+            }
+
+            int? ganadorPenaltis = null;
+            if (localGoles == visitanteGoles)
+            {
+                if (penaltis.SelectedIndex < 0)
+                {
+                    error.Text = "Selecciona el ganador por penaltis.";
+                    penaltis.Focus();
+                    return;
+                }
+                ganadorPenaltis = penaltis.SelectedIndex == 0 ? local.Id : visitante.Id;
+            }
+            respuesta.TrySetResult(new ResultadoPartido(localGoles, visitanteGoles, ganadorPenaltis));
+        };
+        cancelar.Clicked += (_, _) => respuesta.TrySetResult(null);
+        formulario.Disappearing += (_, _) => respuesta.TrySetResult(null);
+        AgregarMarcador(local, golesLocal);
+        AgregarMarcador(visitante, golesVisitante);
+        SemanticProperties.SetDescription(penaltis, "Ganador por penaltis");
+        campos.Add(penaltis);
+        campos.Add(error);
+        campos.Add(guardar);
+        campos.Add(cancelar);
+        formulario.Content = new ScrollView { Content = campos };
+
+        await Navigation.PushModalAsync(formulario);
+        var resultado = await respuesta.Task;
+        if (Navigation.ModalStack.LastOrDefault() == formulario)
+            await Navigation.PopModalAsync();
+        if (resultado is null) return;
+
         var ganador = Cuadro.ResolverGanador(local.Id, visitante.Id, resultado);
         if (await DisplayAlertAsync("Confirmar resultado",
-            $"{Nombre(local)} {golesLocal}–{golesVisitante} {Nombre(visitante)}\nGanador: {Nombre(ganador == local.Id ? local : visitante)}",
+            $"{Nombre(local)} {resultado.GolesLocal}–{resultado.GolesVisitante} {Nombre(visitante)}\nGanador: {Nombre(ganador == local.Id ? local : visitante)}",
             "Confirmar", "Cancelar"))
             await new CuadroSqlite(db).RegistrarResultadoAsync(torneoId, partidoId, resultado, CancellationToken.None);
     }
