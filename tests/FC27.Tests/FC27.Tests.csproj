@@ -15,6 +15,8 @@
     <!-- La lógica de presentación de consulta no depende de MAUI, así que se
          compila aquí para probarla sin el proyecto Android. -->
     <Compile Include="../../TorneoFifaJyC/Features/Consulta/ConsultaCuadro.cs" Link="Consulta/ConsultaCuadro.cs" />
+    <Compile Include="../../TorneoFifaJyC/Features/Consulta/CuadroPageViewModel.cs" Link="Consulta/CuadroPageViewModel.cs" />
+    <Compile Include="../../TorneoFifaJyC/Features/Consulta/DatosFicticiosConsulta.cs" Link="Consulta/DatosFicticiosConsulta.cs" />
     <None Update="cuadro-ejemplo.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
