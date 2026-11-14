@@ -122,8 +122,17 @@ public static class Cuadro
     /// siguiente y devuelve un cuadro nuevo. El resultado no depende del orden en
     /// que se registren los partidos de una fase, porque cada destino es una plaza
     /// distinta. En la final no hay fase siguiente: solo se fija el ganador.
+    ///
+    /// Exige que las dos plazas estén asignadas. Un reintento con el mismo ganador
+    /// devuelve el cuadro sin cambios; registrar un ganador distinto para un partido
+    /// ya confirmado se rechaza.
     /// </summary>
-    /// <exception cref="ArgumentException">Si el partido no existe o el ganador no juega ese partido.</exception>
+    /// <exception cref="ArgumentException">
+    /// Si el partido no existe, tiene una plaza vacía o el ganador no juega ese partido.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Si el partido ya tiene confirmado un ganador distinto del indicado.
+    /// </exception>
     public static CuadroPlan Avanzar(CuadroPlan cuadro, int faseOrden, int posicion, int ganadorId)
     {
         ArgumentNullException.ThrowIfNull(cuadro);
@@ -131,8 +140,18 @@ public static class Cuadro
             ?? throw new ArgumentException($"No existe la fase {faseOrden}.", nameof(faseOrden));
         var partido = fase.Partidos.FirstOrDefault(p => p.Posicion == posicion)
             ?? throw new ArgumentException($"No existe el partido {posicion} en la fase {faseOrden}.", nameof(posicion));
+        if (partido.LocalId is null || partido.VisitanteId is null)
+            throw new ArgumentException("No se puede avanzar un partido con una plaza vacía.", nameof(posicion));
         if (ganadorId != partido.LocalId && ganadorId != partido.VisitanteId)
             throw new ArgumentException("El ganador debe ser una de las dos plazas del partido.", nameof(ganadorId));
+
+        // Idempotencia: el mismo ganador no altera el cuadro. Un ganador distinto
+        // para un partido ya confirmado se rechaza y se muestra al gestor.
+        if (partido.GanadorId is int confirmado)
+            return confirmado == ganadorId
+                ? cuadro
+                : throw new InvalidOperationException(
+                    "El partido ya tiene un ganador confirmado y no puede cambiarse.");
 
         var fases = cuadro.Fases.ToList();
 

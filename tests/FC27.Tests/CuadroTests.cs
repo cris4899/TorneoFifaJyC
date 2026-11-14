@@ -119,6 +119,36 @@ public sealed class CuadroTests
     }
 
     [Fact]
+    public void AvanzarExigeLasDosPlazasAsignadas()
+    {
+        // La final empieza con ambas plazas vacías: no se puede avanzar todavía.
+        var plan = Cuadro.Sortear(4, Inscritos(4));
+        var excepcion = Assert.Throws<ArgumentException>(() => Cuadro.Avanzar(plan, 2, 1, ganadorId: 1));
+        Assert.Contains("plaza vacía", excepcion.Message);
+    }
+
+    [Fact]
+    public void RepetirElMismoGanadorNoAlteraElCuadro()
+    {
+        var plan = Cuadro.Sortear(4, Inscritos(4));
+        var primera = Cuadro.Avanzar(plan, 1, 1, ganadorId: 1);
+
+        var repetida = Cuadro.Avanzar(primera, 1, 1, ganadorId: 1);
+
+        Assert.Same(primera, repetida);
+        Assert.Equal(1, repetida.Fases[1].Partidos[0].LocalId);
+    }
+
+    [Fact]
+    public void NoSePuedeCambiarUnGanadorYaConfirmado()
+    {
+        var plan = Cuadro.Sortear(4, Inscritos(4));
+        var confirmada = Cuadro.Avanzar(plan, 1, 1, ganadorId: 1);
+
+        Assert.Throws<InvalidOperationException>(() => Cuadro.Avanzar(confirmada, 1, 1, ganadorId: 2));
+    }
+
+    [Fact]
     public void JugarLaFinalProduceCampeonYMarcadorDesigualDecideSinPenaltis()
     {
         var plan = Cuadro.Sortear(4, Inscritos(4));
