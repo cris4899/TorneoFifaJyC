@@ -33,4 +33,4 @@ Dani  · Equipo D
 - «Próximos» agrupa los cruces disponibles por ronda. Si faltan resultados previos, indica que aún no hay cruces disponibles. Cada ronda mantiene visible su orden y presenta sus partidos como tarjetas verticales.
 - En un partido jugado, se indica el ganador con texto y se muestra el marcador. En el torneo finalizado, el campeón se destaca por nombre y equipo.
 - Ante un fallo de red, se ofrece «Reintentar». Con datos previos se conserva el cuadro y se indica que puede estar desactualizado. Sin datos previos se muestra el error con la acción de reintento.
-- Botones y campos tienen nombres legibles por el lector de pantalla. El estado y el ganador se identifican con texto. Validar navegación con teclado en Windows y lectura con TalkBack en Android.
+- Botones y campos tienen nombres legibles por el lector de pantalla. El estado y el ganador se identifican con texto. Validar navegación con teclado en Windows y la legibilidad de nombres y estados en Android.
