@@ -1,42 +1,38 @@
+using FC27.Core;
+
 namespace TorneoFifaJyC.Features.Consulta;
 
-/// <summary>
-/// Configuración de la consulta Android. La dirección base se fija en el
-/// dispositivo con la IP del Windows del gestor tras validar la red (FC27-06).
-/// Mientras sea null, la pantalla usa datos ficticios.
-/// </summary>
-public static class ConsultaConfig
+/// <summary>Preferencias por dispositivo sobre MAUI Preferences.</summary>
+public sealed class MauiPreferencias : IAlmacenPreferencias
 {
-    /// <summary>Id del torneo que muestra la demo.</summary>
-    public static int TorneoId { get; set; } = 1;
-
-    /// <summary>Dirección base del servicio de lectura, o null para datos ficticios.</summary>
-    public static Uri? BaseAddress { get; set; }
-
-    /// <summary>Intervalo de actualización mientras la pantalla está visible.</summary>
-    public static TimeSpan Intervalo { get; set; } = TimeSpan.FromSeconds(5);
+    public string? Leer(string clave) => Preferences.Get(clave, null);
+    public void Guardar(string clave, string valor) => Preferences.Set(clave, valor);
 }
 
 /// <summary>
-/// Pantalla de consulta del cuadro para Android. Consulta al abrir, repite cada
-/// pocos segundos mientras está visible, mantiene una sola consulta en curso y
-/// cancela al salir. FC27-06 conecta el servicio real; FC27-04 dejó la vista.
+/// Pantalla de consulta del cuadro para Android. Configura la dirección del
+/// servicio, elige un torneo iniciado o finalizado, alterna Rondas y Próximos,
+/// muestra la última actualización y, sin servicio, trabaja en modo demo.
+/// Consulta al abrir, repite cada pocos segundos y cancela al salir.
 /// </summary>
 public partial class CuadroPage : ContentPage
 {
-    private readonly CuadroPageViewModel _modelo;
+    private readonly ConfiguracionConsulta _config = new(new MauiPreferencias());
+    private CuadroPageViewModel _modelo = null!;
     private CancellationTokenSource? _ciclo;
 
     public CuadroPage()
-        : this(new CuadroPageViewModel(
-            ConsultaAndroid.CrearCargador(ConsultaConfig.TorneoId, ConsultaConfig.BaseAddress)))
-    {
-    }
-
-    public CuadroPage(CuadroPageViewModel modelo)
     {
         InitializeComponent();
-        _modelo = modelo;
+        ReconstruirModelo();
+        DireccionEntry.Text = _config.DireccionApi;
+    }
+
+    // Crea el modelo de vista con el origen actual (servicio real o demo).
+    private void ReconstruirModelo()
+    {
+        var (consulta, demo) = OrigenConsulta.Crear(_config);
+        _modelo = new CuadroPageViewModel(consulta, modoDemo: demo);
         BindingContext = _modelo;
     }
 
@@ -44,24 +40,34 @@ public partial class CuadroPage : ContentPage
     {
         base.OnAppearing();
         _ciclo = new CancellationTokenSource();
-        _ = ActualizarEnBucleAsync(_ciclo.Token);
+        _ = IniciarAsync(_ciclo.Token);
     }
 
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        // Cancela la consulta en curso y detiene el ciclo al salir de la pantalla.
         _ciclo?.Cancel();
         _ciclo?.Dispose();
         _ciclo = null;
     }
 
-    private async Task ActualizarEnBucleAsync(CancellationToken ct)
+    private async Task IniciarAsync(CancellationToken ct)
     {
         try
         {
-            await _modelo.ActualizarAsync(ct);
-            using var temporizador = new PeriodicTimer(ConsultaConfig.Intervalo);
+            await _modelo.CargarTorneosAsync(ct);
+            if (_config.TorneoId is { } guardado)
+            {
+                var torneo = _modelo.TorneosDisponibles.FirstOrDefault(t => t.Id == guardado);
+                if (torneo is not null) await _modelo.SeleccionarTorneoAsync(torneo, ct);
+                else await _modelo.ActualizarAsync(ct);
+            }
+            else
+            {
+                await _modelo.ActualizarAsync(ct);
+            }
+
+            using var temporizador = new PeriodicTimer(TimeSpan.FromSeconds(5));
             while (await temporizador.WaitForNextTickAsync(ct))
                 await _modelo.ActualizarAsync(ct);
         }
@@ -69,5 +75,55 @@ public partial class CuadroPage : ContentPage
         {
             // Salida normal al abandonar la pantalla.
         }
+    }
+
+    private async void OnProbarConexion(object? sender, EventArgs e)
+    {
+        EstadoConexionLabel.Text = "Probando…";
+        try
+        {
+            var resultado = string.IsNullOrWhiteSpace(DireccionEntry.Text)
+                ? await ProbadorConexion.ProbarAsync(new ConsultaDemo(), CancellationToken.None)
+                : await ProbarDireccionAsync(DireccionEntry.Text);
+            EstadoConexionLabel.Text = resultado.Mensaje;
+        }
+        catch (Exception error)
+        {
+            EstadoConexionLabel.Text = $"No se pudo probar: {error.Message}";
+        }
+    }
+
+    private static async Task<ResultadoPrueba> ProbarDireccionAsync(string direccion)
+    {
+        if (!Uri.TryCreate(direccion.Trim(), UriKind.Absolute, out var uri))
+            return ResultadoPrueba.Fallo("la dirección no es válida.");
+        return await ProbadorConexion.ProbarAsync(uri, CancellationToken.None);
+    }
+
+    private async void OnGuardarDireccion(object? sender, EventArgs e)
+    {
+        try
+        {
+            _config.GuardarDireccion(DireccionEntry.Text);
+        }
+        catch (ArgumentException error)
+        {
+            EstadoConexionLabel.Text = error.Message;
+            return;
+        }
+
+        EstadoConexionLabel.Text = _config.ModoDemo ? "Modo demo activado." : "Dirección guardada.";
+        ReconstruirModelo();
+        _ciclo?.Cancel();
+        _ciclo?.Dispose();
+        _ciclo = new CancellationTokenSource();
+        await IniciarAsync(_ciclo.Token);
+    }
+
+    private async void OnTorneoCambiado(object? sender, EventArgs e)
+    {
+        if (TorneoPicker.SelectedItem is not Torneo torneo) return;
+        _config.TorneoId = torneo.Id;
+        if (_ciclo is { } ciclo) await _modelo.SeleccionarTorneoAsync(torneo, ciclo.Token);
     }
 }
