@@ -270,7 +270,7 @@ public sealed class GestionPage : ContentPage
                     var gano = jugado && jugador is not null && jugador.Id == partido.GanadorId;
                     tarjeta.Add(new Label
                     {
-                        Text = gano ? $"{Nombre(jugador)} · Ganador" : Nombre(jugador),
+                        Text = gano ? $"Ganador: {Nombre(jugador)}" : Nombre(jugador),
                         TextColor = gano ? Lima : Claro,
                         FontSize = 14,
                         MaxLines = 2,
