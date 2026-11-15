@@ -193,6 +193,11 @@ public sealed class GestionPage : ContentPage
         var cuadro = await new ConsultaTorneosSqlite(db).ObtenerCuadroAsync(torneo.Id, CancellationToken.None);
         if (cuadro is null) return;
         if (cuadro.Campeon is { } campeon) Texto($"Campeón: {Nombre(campeon)}", 20);
+        if (_seccion == Seccion.Cuadro)
+        {
+            MostrarCuadroVisual(cuadro);
+            return;
+        }
         foreach (var ronda in cuadro.Rondas)
         {
             Texto(ronda.Nombre, 20);
@@ -213,6 +218,75 @@ public sealed class GestionPage : ContentPage
                 }
             }
         }
+    }
+
+    private void MostrarCuadroVisual(CuadroTorneo cuadro)
+    {
+        const double ancho = 250;
+        const double separacion = 44;
+        const double alto = 140;
+        const double paso = alto + 16;
+        var rondas = cuadro.Rondas;
+        if (rondas.Count == 0) return;
+
+        var lienzo = new AbsoluteLayout
+        {
+            WidthRequest = rondas.Count * (ancho + separacion) - separacion,
+            HeightRequest = 48 + rondas[0].Partidos.Count * paso
+        };
+        double Centro(int ronda, int posicion) => 42 + ((posicion - 0.5) * (1 << ronda)) * paso;
+
+        void Colocar(View vista, double x, double y, double a, double h)
+        {
+            AbsoluteLayout.SetLayoutBounds(vista, new Rect(x, y, a, h));
+            lienzo.Children.Add(vista);
+        }
+
+        void Linea(double x, double y, double a, double h) =>
+            Colocar(new BoxView { Color = Color.FromArgb("#929BA3"), InputTransparent = true }, x, y, a, h);
+
+        for (var indice = 0; indice < rondas.Count; indice++)
+        {
+            var x = indice * (ancho + separacion);
+            Colocar(new Label { Text = rondas[indice].Nombre, TextColor = Claro, FontSize = 18 }, x, 0, ancho, 36);
+            foreach (var partido in rondas[indice].Partidos)
+            {
+                var centro = Centro(indice, partido.Posicion);
+                if (indice + 1 < rondas.Count)
+                {
+                    // Cada pareja de cruces converge en la posición calculada por el dominio.
+                    var destino = Centro(indice + 1, Cuadro.Destino(partido.Posicion).PosicionDestino);
+                    var union = x + ancho + separacion / 2;
+                    Linea(x + ancho, centro, separacion / 2, 2);
+                    Linea(union, Math.Min(centro, destino), 2, Math.Abs(centro - destino) + 2);
+                    Linea(union, destino, separacion / 2, 2);
+                }
+
+                var jugado = partido.Estado == EstadoPartido.Jugado;
+                var marcador = jugado ? $"{partido.GolesLocal}–{partido.GolesVisitante}" : "Pendiente";
+                var tarjeta = new VerticalStackLayout { Padding = 10, Spacing = 2, BackgroundColor = Superficie };
+                foreach (var jugador in new[] { partido.Local, partido.Visitante })
+                {
+                    var gano = jugado && jugador is not null && jugador.Id == partido.GanadorId;
+                    tarjeta.Add(new Label
+                    {
+                        Text = gano ? $"Ganador: {Nombre(jugador)}" : Nombre(jugador),
+                        TextColor = gano ? Lima : Claro,
+                        FontSize = 14,
+                        MaxLines = 2,
+                        LineBreakMode = LineBreakMode.TailTruncation
+                    });
+                }
+                tarjeta.Add(new Label { Text = marcador, TextColor = Claro, FontSize = 16, FontAttributes = FontAttributes.Bold });
+                var ganador = partido.GanadorId == partido.Local?.Id ? partido.Local : partido.Visitante;
+                SemanticProperties.SetDescription(tarjeta,
+                    $"{rondas[indice].Nombre}, partido {partido.Posicion}. {Nombre(partido.Local)} contra {Nombre(partido.Visitante)}. {marcador}."
+                    + (jugado ? $" Ganador: {Nombre(ganador)}." : string.Empty));
+                Colocar(tarjeta, x, centro - alto / 2, ancho, alto);
+            }
+        }
+
+        _panel.Add(new ScrollView { Orientation = ScrollOrientation.Horizontal, Content = lienzo });
     }
 
     private async Task RegistrarAsync(TorneoDbContext db, int torneoId, int partidoId,
