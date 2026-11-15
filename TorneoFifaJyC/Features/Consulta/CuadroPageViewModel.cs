@@ -57,7 +57,8 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
 {
     private readonly IConsultaTorneos _consulta;
     private readonly Func<DateTimeOffset> _reloj;
-    private readonly ModeloConsultaCuadro _modelo = new();
+    private ModeloConsultaCuadro _modelo = new();
+    private int _versionConsulta;
     private RondaCuadro? _rondaSeleccionada;
     private Torneo? _torneoSeleccionado;
     private DateTimeOffset? _ultima;
@@ -90,7 +91,19 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
     public Torneo? TorneoSeleccionado
     {
         get => _torneoSeleccionado;
-        private set { _torneoSeleccionado = value; Notificar(); }
+        private set
+        {
+            if (_torneoSeleccionado?.Id != value?.Id)
+            {
+                // El cuadro y la hora pertenecen exclusivamente al torneo seleccionado.
+                _versionConsulta++;
+                _modelo = new();
+                _rondaSeleccionada = null;
+                _ultima = null;
+            }
+            _torneoSeleccionado = value;
+            Notificar();
+        }
     }
 
     public bool HayTorneos => TorneosDisponibles.Count > 0;
@@ -184,13 +197,13 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
     {
         try
         {
-            TorneosDisponibles = await _consulta.ListarAsync(cancellationToken).ConfigureAwait(false);
+            TorneosDisponibles = await _consulta.ListarAsync(cancellationToken);
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception) { TorneosDisponibles = Array.Empty<Torneo>(); }
 
         if (_torneoSeleccionado is null || TorneosDisponibles.All(t => t.Id != _torneoSeleccionado.Id))
-            _torneoSeleccionado = TorneosDisponibles.FirstOrDefault();
+            TorneoSeleccionado = TorneosDisponibles.FirstOrDefault();
 
         Notificar(nameof(TorneosDisponibles));
         Notificar(nameof(HayTorneos));
@@ -201,7 +214,7 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
     public async Task SeleccionarTorneoAsync(Torneo? torneo, CancellationToken cancellationToken = default)
     {
         TorneoSeleccionado = torneo;
-        await ActualizarAsync(cancellationToken).ConfigureAwait(false);
+        await ActualizarAsync(cancellationToken);
     }
 
     /// <summary>
@@ -210,13 +223,16 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
     /// </summary>
     public async Task ActualizarAsync(CancellationToken cancellationToken = default)
     {
+        var version = ++_versionConsulta;
         _modelo.Cargando();
         NotificarTodo();
         try
         {
             var cuadro = _torneoSeleccionado is { } torneo
-                ? await _consulta.ObtenerCuadroAsync(torneo.Id, cancellationToken).ConfigureAwait(false)
+                ? await _consulta.ObtenerCuadroAsync(torneo.Id, cancellationToken)
                 : null;
+            cancellationToken.ThrowIfCancellationRequested();
+            if (version != _versionConsulta) return;
             _modelo.Recibir(cuadro);
             _ultima = _reloj(); // El servicio respondió: cuenta como última actualización correcta.
         }
@@ -226,6 +242,7 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
         }
         catch (Exception)
         {
+            if (version != _versionConsulta || cancellationToken.IsCancellationRequested) return;
             _modelo.Fallar();
         }
 
@@ -269,7 +286,7 @@ public sealed class ComandoAsync : ICommand
         if (_enCurso) return;
         _enCurso = true;
         CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-        try { await _ejecutar().ConfigureAwait(false); }
+        try { await _ejecutar(); }
         finally
         {
             _enCurso = false;
