@@ -36,6 +36,42 @@ public sealed class CuadroSqlite(TorneoDbContext db)
         await tx.CommitAsync(ct);
     }
 
+    /// <summary>Corrige un resultado y su plaza de destino si el siguiente cruce sigue pendiente.</summary>
+    public async Task CorregirResultadoAsync(int torneoId, int partidoId, ResultadoPartido resultado, CancellationToken ct)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var cruces = await (
+            from fase in db.Fases.AsNoTracking()
+            join partido in db.Partidos.AsNoTracking() on fase.Id equals partido.FaseId
+            where fase.TorneoId == torneoId
+            select new { fase.Orden, Partido = partido }).ToListAsync(ct);
+        var origen = cruces.SingleOrDefault(c => c.Partido.Id == partidoId)
+            ?? throw new KeyNotFoundException("El partido no pertenece al torneo.");
+        var partidoActual = origen.Partido;
+        if (partidoActual.EstadoPartido != EstadoPartido.Jugado)
+            throw new InvalidOperationException("Solo se corrigen marcadores confirmados.");
+
+        var (posicion, esLocal) = Cuadro.Destino(partidoActual.Posicion);
+        var destino = cruces.SingleOrDefault(c => c.Orden == origen.Orden + 1 && c.Partido.Posicion == posicion)?.Partido;
+        if (destino is null)
+            throw new InvalidOperationException("La final confirmada no se puede corregir.");
+        if (destino.EstadoPartido != EstadoPartido.Pendiente)
+            throw new InvalidOperationException("El siguiente cruce ya se ha jugado.");
+
+        var ganador = Cuadro.ResolverGanador(partidoActual.EquipoLocalId, partidoActual.EquipoVisitanteId, resultado);
+        // El marcador y la plaza que sale de este cruce se actualizan juntos.
+        await db.Partidos.Where(p => p.Id == partidoId).ExecuteUpdateAsync(p => p
+            .SetProperty(x => x.GolesLocal, resultado.GolesLocal)
+            .SetProperty(x => x.GolesVisitante, resultado.GolesVisitante)
+            .SetProperty(x => x.GanadorId, ganador), ct);
+        var partidosDestino = db.Partidos.Where(p => p.Id == destino.Id);
+        if (esLocal)
+            await partidosDestino.ExecuteUpdateAsync(p => p.SetProperty(x => x.EquipoLocalId, ganador), ct);
+        else
+            await partidosDestino.ExecuteUpdateAsync(p => p.SetProperty(x => x.EquipoVisitanteId, ganador), ct);
+        await tx.CommitAsync(ct);
+    }
+
     /// <summary>Confirma el marcador y el avance del ganador en una transacción.</summary>
     public async Task RegistrarResultadoAsync(int torneoId, int partidoId, ResultadoPartido resultado, CancellationToken ct)
     {

@@ -43,4 +43,42 @@ public sealed class ResultadoSqliteTests
         Assert.Equal(EstadoTorneo.Finalizado, terminado.Torneo.Estado);
         Assert.Equal(final.Visitante.Id, terminado.Campeon?.Id);
     }
+
+    [Fact]
+    public async Task CorrigeLaPlazaVisitanteSoloMientrasLaFinalEstaPendiente()
+    {
+        await using var conexion = new SqliteConnection("Data Source=:memory:;Foreign Keys=True");
+        await conexion.OpenAsync();
+        await using var db = new TorneoDbContext(new DbContextOptionsBuilder<TorneoDbContext>().UseSqlite(conexion).Options);
+        await db.Database.MigrateAsync();
+        var ct = CancellationToken.None;
+        var inscripciones = new InscripcionesSqlite(db);
+        var torneo = await inscripciones.CrearAsync("Copa", 4, ct);
+        for (var id = 1; id <= 4; id++)
+            await inscripciones.InscribirAsync(torneo.Id, new($"Jugador {id}", $"{id}@example.com", "Equipo"), ct);
+
+        var cuadro = new CuadroSqlite(db);
+        var consulta = new ConsultaTorneosSqlite(db);
+        await cuadro.IniciarAsync(torneo.Id, ct);
+        var inicial = (await consulta.ObtenerCuadroAsync(torneo.Id, ct))!;
+        var semifinales = inicial.Rondas[0].Partidos;
+        foreach (var partido in semifinales)
+            await cuadro.RegistrarResultadoAsync(torneo.Id, partido.Id, new(1, 0, null), ct);
+
+        var segunda = semifinales[1];
+        await cuadro.CorregirResultadoAsync(torneo.Id, segunda.Id, new(1, 1, segunda.Visitante!.Id), ct);
+        var corregido = (await consulta.ObtenerCuadroAsync(torneo.Id, ct))!;
+        var final = Assert.Single(corregido.Rondas[1].Partidos);
+        Assert.Equal(semifinales[0].Local?.Id, final.Local?.Id);
+        Assert.Equal(segunda.Visitante.Id, final.Visitante?.Id);
+        Assert.Equal(segunda.Visitante.Id, corregido.Rondas[0].Partidos[1].GanadorId);
+
+        await cuadro.RegistrarResultadoAsync(torneo.Id, final.Id, new(0, 1, null), ct);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            cuadro.CorregirResultadoAsync(torneo.Id, segunda.Id, new(2, 0, null), ct));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            cuadro.CorregirResultadoAsync(torneo.Id, final.Id, new(2, 0, null), ct));
+        var cerrado = (await consulta.ObtenerCuadroAsync(torneo.Id, ct))!;
+        Assert.Equal(segunda.Visitante.Id, cerrado.Campeon?.Id);
+    }
 }
