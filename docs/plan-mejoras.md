@@ -26,6 +26,13 @@ En Inscritos, abre «Importar inscripciones CSV» en un torneo en borrador. El a
 
 En Partidos o Cuadro, abre «Exportar cuadro y resultados CSV» y elige dónde guardar. El archivo incluye un cruce por fila, los marcadores confirmados y el ganador. Los cruces pendientes dejan el marcador en blanco.
 
+## Estado comprobado el 15 de noviembre de 2026
+
+- En `master` (`75c1ab4`), 6 pruebas afectadas de CSV y resultados y 70 pruebas de la suite pasaron; la compilación Windows terminó con 0 errores y 0 avisos.
+- P02 reveló en Windows un diálogo técnico en inglés al intentar añadir una inscripción vacía. La corrección está propuesta en el [PR #29](https://github.com/cris4899/TorneoFifaJyC/pull/29): formulario vacío, correo inválido, alta válida y duplicado con distintas mayúsculas comprobados manualmente; 70 pruebas y compilación Windows pasan también en esa rama.
+- P03 solo se comprobó parcialmente en esta sesión: con 2 de 4 inscritos, «Sortear e iniciar» sigue deshabilitado. La prueba completa de sorteo, marcadores, reinicio y exportación sigue pendiente.
+- El selector CSV de Windows se abrió, pero el diálogo del sistema no fue controlable por la automatización; la prueba manual previa está registrada en el PR #26. P09 y P10 con Android continúan pendientes.
+
 ## Bloque de aceptación y entrega pendiente
 
 Las comprobaciones de código y la prueba manual de Windows del PR #26 no sustituyen las pruebas de aceptación de `docs/pruebas.md`. Trabajad en bloques completos según `docs/relevo.md` y registrad únicamente resultados ejecutados.
