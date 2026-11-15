@@ -86,6 +86,7 @@ public sealed class GestionPage : ContentPage
 
             Texto("Nuevo torneo", 22);
             var nombre = Campo("Nombre del torneo");
+            var errorNombre = MensajeCampo();
             var capacidad = new Picker
             {
                 Title = "Capacidad", ItemsSource = Cuadro.CapacidadesValidas.ToArray(), SelectedIndex = 0,
@@ -93,9 +94,30 @@ public sealed class GestionPage : ContentPage
             };
             SemanticProperties.SetDescription(capacidad, "Capacidad del torneo");
             _panel.Add(capacidad);
-            Accion("Crear torneo", async contexto =>
-                Abrir(await new InscripcionesSqlite(contexto).CrearAsync(nombre.Text,
-                    (int)capacidad.SelectedItem, CancellationToken.None)), principal: true);
+            var crear = new Button
+            {
+                Text = "Crear torneo", CornerRadius = 8, MinimumHeightRequest = 42,
+                BackgroundColor = Lima, TextColor = Fondo
+            };
+            crear.Clicked += async (_, _) =>
+            {
+                var nombreTexto = nombre.Text?.Trim();
+                var nombreVacio = string.IsNullOrWhiteSpace(nombreTexto);
+                var nombreDuplicado = !nombreVacio && torneos.Any(torneo =>
+                    string.Equals(torneo.Nombre, nombreTexto, StringComparison.OrdinalIgnoreCase));
+                errorNombre.Text = nombreVacio ? "Indica el nombre del torneo." : "Ya existe un torneo con ese nombre.";
+                errorNombre.IsVisible = nombreVacio || nombreDuplicado;
+                if (errorNombre.IsVisible)
+                {
+                    nombre.Focus();
+                    return;
+                }
+
+                await EjecutarAsync(async contexto =>
+                    Abrir(await new InscripcionesSqlite(contexto).CrearAsync(nombreTexto!,
+                        (int)capacidad.SelectedItem, CancellationToken.None)));
+            };
+            _panel.Add(crear);
             return;
         }
 
