@@ -64,7 +64,7 @@ en `docs/capturas/` con el nombre indicado y sin correos a la vista.
 | `and-03-campeon.png` | Cuadro finalizado | Con el campeón destacado. |
 | `and-04-vacio.png` | Estado vacío | Sin torneos disponibles. |
 | `and-05-error-conexion.png` | Estado error/desactualizado | Cortar la red y pulsar Reintentar; mostrar el aviso. |
-| `and-06-talkback-nombre-largo.png` | Accesibilidad | Con TalkBack activo y un nombre de jugador largo. |
+| `and-06-nombre-largo.png` | Legibilidad | Cuadro con un nombre de jugador largo. |
 
 > Las capturas requieren la app corriendo en un emulador o dispositivo Android
 > (Windows con el workload de Android), que no está disponible en el entorno de
