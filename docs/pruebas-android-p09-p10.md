@@ -47,3 +47,22 @@ Base sembrada con `FC27.Data`: torneo **«Copa DAM»** (4 plazas, iniciado) con 
 2. **TalkBack:** lectura de cruces, estado y ganador.
 3. **Objetivo de 10 s en LAN real** (RNF-03) con el móvil y el Windows del gestor en la misma red.
 4. **Legibilidad visual** del nombre largo en la tarjeta (a nivel de datos viaja íntegro; el recorte en pantalla depende del render).
+
+## Ejecución en emulador Pixel_8 (15 de noviembre de 2026)
+
+- **Versión:** `master` c35fada (PR #27–#30 fusionados). APK de depuración con `EmbedAssembliesIntoApk=true`.
+- **Entorno:** Windows 11, emulador Pixel_8, `FC27.Api` en `http://127.0.0.1:5080` sobre una base SQLite de prueba, túnel `adb reverse tcp:5080 tcp:5080`. Dirección introducida y guardada desde la propia pantalla «Servicio de consulta».
+- **Datos:** «Copa DAM» (en curso, con `Maximiliano Fernández-Larrañaga del Bosque`) y «Borrador QA» en borrador. Datos ficticios, sin correos a la vista.
+
+| Comprobación | Resultado observado |
+| --- | --- |
+| Selección de torneo | El selector ofrece solo «Copa DAM»; el borrador no aparece. |
+| Cuadro | Semifinales en orden, dos cruces pendientes. |
+| Nombre largo | Se muestra completo en la tarjeta, con salto de línea, sin recorte ([captura](capturas/p09p10-02-api-real.png)). |
+| Actualización tras escribir un resultado (2–1 en la semifinal 2) | Android muestra «Gana Bea» a los **6,93 s** desde el inicio del proceso de escritura. Cumple el objetivo de 10 s en este entorno ([captura](capturas/p09p10-03-resultado.png)). |
+| Desconexión (API detenida) | A los 5,0 s aparece «Sin conexión. Se muestra la última versión.» y «Reintentar»; se conservan los marcadores ([captura](capturas/p09p10-04-desconexion.png)). |
+| Reconexión (API reiniciada) | El aviso desaparece solo a los 2,1 s y la hora de actualización avanza ([captura](capturas/p09p10-05-reconexion.png)). |
+
+**Observación:** el aviso de sin conexión aparece al final de la página; con el cuadro de dos cruces queda en el borde inferior y el botón «Reintentar» exige desplazarse.
+
+**No ejecutado en esta sesión:** estado vacío en la interfaz (verificado antes en Pixel 7, ver [verificación Android](capturas/verificacion-android.md)), escritura del resultado desde la interfaz Windows (se escribió con `CuadroSqlite` sobre la misma base) y red LAN con móvil físico, fuera del alcance acordado en [entrega](entrega.md). TalkBack queda fuera del alcance vigente.
