@@ -1,6 +1,6 @@
 # Plan de mejoras FC27
 
-El turno activo es de Cris. Juan puede consultar el plan y empieza su bloque cuando reciba el nuevo prompt de relevo.
+El responsable del turno se confirma en el último relevo publicado en GitHub. Las mejoras de interfaz, cuadro, corrección y CSV están integradas; queda cerrar la aceptación y la entrega con evidencias verificables.
 
 ## Primera tanda
 
@@ -25,3 +25,20 @@ Cris entrega el turno tras publicar y verificar el bloque Windows. El relevo inc
 En Inscritos, abre «Importar inscripciones CSV» en un torneo en borrador. El archivo usa UTF-8, cabecera nombre,correo,equipo y coma o punto y coma como separador. Revisa la vista previa y confirma. Si faltan plazas o se repite un correo en el archivo o en el torneo, se rechaza el lote completo.
 
 En Partidos o Cuadro, abre «Exportar cuadro y resultados CSV» y elige dónde guardar. El archivo incluye un cruce por fila, los marcadores confirmados y el ganador. Los cruces pendientes dejan el marcador en blanco.
+
+## Bloque de aceptación y entrega pendiente
+
+Las comprobaciones de código y la prueba manual de Windows del PR #26 no sustituyen las pruebas de aceptación de `docs/pruebas.md`. Trabajad en bloques completos según `docs/relevo.md` y registrad únicamente resultados ejecutados.
+
+### Turno de Juan · regresión y consulta Android
+
+1. Incorporar `tests/FC27.Tests/FlujoIntegradoTests.cs` desde una rama basada en `master`. El PR debe cubrir rechazo total del CSV duplicado, propagación del ganador corregido y exportación del marcador corregido. Ejecutar primero esas pruebas y luego `dotnet test` una vez para el lote.
+2. Verificar en emulador Android, si está disponible, selección de torneo, dirección de API guardada, modo demo, ronda, nombres largos, hora de actualización y reconexión. Cubrir los casos P09 y P10 de `docs/pruebas.md` y registrar versión, dispositivo, pasos y resultado observado. Si el entorno no permite arrancar el emulador o conectar con la API, indicar el bloqueo concreto y ejecutar las comprobaciones de API o cliente que sí estén disponibles.
+3. Publicar en el mismo turno el PR de regresión y la evidencia Android en su descripción o en documentación de pruebas, además de los fallos reproducibles que encuentre. Devolver a Cris los enlaces y los pasos pendientes de dispositivo; no declarar superada una prueba que no se ejecutó.
+
+### Turno de Cris · aceptación Windows e integración
+
+1. Revisar y fusionar, si está listo, el PR de regresión. Ejecutar las comprobaciones afectadas y una suite completa del lote.
+2. Completar las pruebas Windows pendientes de `docs/pruebas.md`: creación y validación de inscritos, sorteo, marcadores y penaltis, corrección, reinicio, navegación por teclado y CSV. Registrar el resultado por versión y dispositivo, con capturas sin correos.
+3. Ejecutar con Juan o con los medios disponibles la comunicación Windows–Android de P09 y P10, incluida pérdida y recuperación de conexión. Registrar el tiempo observado frente al objetivo de 10 s. La demo final en móvil físico requiere el dispositivo y la red real; si faltan, dejar ese requisito explícitamente pendiente.
+4. Actualizar la documentación de entrega con las pruebas realmente ejecutadas, defectos abiertos y limitaciones. Cerrar la entrega solo tras comprobar los criterios pendientes; TalkBack permanece fuera del alcance acordado.
