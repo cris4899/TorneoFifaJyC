@@ -33,7 +33,7 @@ Pruebas Windows pendientes de [pruebas.md](pruebas.md), según el turno de Cris 
 
 | Bloque | Pasos | Resultado |
 | --- | --- | --- |
-| Confirmación de exportación | Exportar «Copa Windows QA». | Aparece «CSV exportado» y «Se guardó en …adro-1.csv». El fichero tiene las 3 filas esperadas. Correcto. |
+| Confirmación de exportación | Exportar «Copa Windows QA». | Aparece «CSV exportado» y «Se guardó en …\cuadro-1.csv». El fichero tiene las 3 filas esperadas. Correcto. |
 | Reinicio a mitad de ronda | Con «Copa CSV QA» en curso, semifinal 1 jugada (2–0) y semifinal 2 pendiente, cerrar la app a la fuerza y abrirla. | El torneo sigue «En curso», la semifinal 1 conserva 2–0 y la final muestra «Eva (Inter) — Por determinar». Correcto. |
 | P09 Windows → Android | Con la API leyendo la base de la app Windows y el emulador Pixel_8 por `adb reverse`, confirmar 3–1 en la semifinal 2. | El emulador muestra «3 - 1» y «Gana Hugo» a los 7 s (objetivo: 10 s). Correcto. |
 | P10 pérdida y recuperación | Parar la API y volver a arrancarla. | A los 5,8 s aparece «Sin conexión. Se muestra la última versión.» con «Reintentar» y se conserva el cuadro. Con la API de nuevo arriba, se recupera solo en 4,4 s. Correcto. |
