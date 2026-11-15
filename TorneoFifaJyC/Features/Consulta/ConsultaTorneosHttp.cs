@@ -38,24 +38,3 @@ public sealed class ConsultaTorneosHttp(HttpClient http) : IConsultaTorneos
             .ConfigureAwait(false);
     }
 }
-
-/// <summary>
-/// Composición del origen de datos de la pantalla Android. Con una dirección base
-/// configurada usa el servicio real; sin ella, los datos ficticios de FC27-04.
-/// </summary>
-public static class ConsultaAndroid
-{
-    /// <summary>
-    /// Devuelve el cargador del cuadro para la página. Si <paramref name="baseAddress"/>
-    /// es null, sirve datos ficticios para poder probar la pantalla sin red.
-    /// </summary>
-    public static Func<CancellationToken, Task<CuadroTorneo?>> CrearCargador(int torneoId, Uri? baseAddress)
-    {
-        if (baseAddress is null)
-            return DatosFicticiosConsulta.CargarAsync;
-
-        var http = new HttpClient { BaseAddress = baseAddress };
-        var cliente = new ConsultaTorneosHttp(http);
-        return ct => cliente.ObtenerCuadroAsync(torneoId, ct);
-    }
-}

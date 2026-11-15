@@ -14,14 +14,14 @@ namespace TorneoFifaJyC.Features.Consulta;
 /// los textos de plaza, marcador y ganador para que la página no tenga lógica.
 /// </summary>
 public sealed record PartidoFila(
-    int Posicion, string Local, string Visitante, string Marcador, string Resultado, string Descripcion)
+    int Posicion, string Ronda, string Local, string Visitante, string Marcador, string Resultado, string Descripcion)
 {
     private const string PorDeterminar = "Por determinar";
 
     private static string Jugador(JugadorCuadro? j) => j is null ? PorDeterminar : $"{j.NombreJugador} · {j.EquipoFC27}";
 
-    /// <summary>Proyecta un partido del contrato a una fila accesible.</summary>
-    public static PartidoFila Desde(PartidoCuadro p)
+    /// <summary>Proyecta un partido del contrato a una fila accesible. La ronda es opcional.</summary>
+    public static PartidoFila Desde(PartidoCuadro p, string ronda = "")
     {
         var local = Jugador(p.Local);
         var visitante = Jugador(p.Visitante);
@@ -37,43 +37,98 @@ public sealed record PartidoFila(
             resultado = ganador is null ? "Jugado" : $"Gana {ganador.NombreJugador}";
         }
 
+        var prefijo = string.IsNullOrEmpty(ronda) ? $"Partido {p.Posicion}" : $"{ronda}, partido {p.Posicion}";
         var descripcion = jugado
-            ? $"Partido {p.Posicion}. {local} {marcador} {visitante}. {resultado}."
-            : $"Partido {p.Posicion}. {local} contra {visitante}. {resultado}.";
-        return new PartidoFila(p.Posicion, local, visitante, marcador, resultado, descripcion);
+            ? $"{prefijo}. {local} {marcador} {visitante}. {resultado}."
+            : $"{prefijo}. {local} contra {visitante}. {resultado}.";
+        return new PartidoFila(p.Posicion, ronda, local, visitante, marcador, resultado, descripcion);
     }
 }
 
+/// <summary>Vista activa del cuadro: la ronda seleccionada o los próximos cruces.</summary>
+public enum VistaCuadro { Rondas, Proximos }
+
 /// <summary>
-/// Modelo de vista de la pantalla de cuadro Android. Enlaza <see cref="ModeloConsultaCuadro"/>
-/// con la interfaz: selector de ronda, filas de cruce, campeón y reintento. Solo
-/// usa tipos base de .NET, así que se prueba sin el proyecto MAUI.
+/// Modelo de vista de la pantalla de cuadro Android. Elige torneo, alterna entre
+/// Rondas y Próximos, muestra la hora de la última actualización correcta e indica
+/// el modo demo. Solo usa tipos base de .NET, así que se prueba sin el proyecto MAUI.
 /// </summary>
 public sealed class CuadroPageViewModel : INotifyPropertyChanged
 {
-    private readonly ModeloConsultaCuadro _modelo = new();
-    private readonly Func<CancellationToken, Task<CuadroTorneo?>> _cargar;
+    private readonly IConsultaTorneos _consulta;
+    private readonly Func<DateTimeOffset> _reloj;
+    private ModeloConsultaCuadro _modelo = new();
+    private int _versionConsulta;
     private RondaCuadro? _rondaSeleccionada;
+    private Torneo? _torneoSeleccionado;
+    private DateTimeOffset? _ultima;
+    private VistaCuadro _vista = VistaCuadro.Rondas;
 
-    /// <param name="cargar">Fuente de datos del cuadro. En FC27-04 son datos ficticios; FC27-06 la sustituye por el servicio real.</param>
-    public CuadroPageViewModel(Func<CancellationToken, Task<CuadroTorneo?>> cargar)
+    public CuadroPageViewModel(IConsultaTorneos consulta, Func<DateTimeOffset>? reloj = null, bool modoDemo = false)
     {
-        _cargar = cargar ?? throw new ArgumentNullException(nameof(cargar));
+        _consulta = consulta ?? throw new ArgumentNullException(nameof(consulta));
+        _reloj = reloj ?? (() => DateTimeOffset.Now);
+        ModoDemo = modoDemo;
         ReintentarComando = new ComandoAsync(() => ActualizarAsync());
+        VerRondasComando = new Comando(() => Vista = VistaCuadro.Rondas);
+        VerProximosComando = new Comando(() => Vista = VistaCuadro.Proximos);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    /// <summary>Comando del botón «Reintentar».</summary>
     public ICommand ReintentarComando { get; }
+    public ICommand VerRondasComando { get; }
+    public ICommand VerProximosComando { get; }
 
-    /// <summary>Estado actual de la consulta.</summary>
+    /// <summary>La pantalla sirve datos ficticios sin un servicio configurado.</summary>
+    public bool ModoDemo { get; }
+    public string ModoDemoTexto => ModoDemo ? "Modo demo · datos ficticios" : string.Empty;
+
+    /// <summary>Torneos iniciados o finalizados que ofrece el servicio.</summary>
+    public IReadOnlyList<Torneo> TorneosDisponibles { get; private set; } = Array.Empty<Torneo>();
+
+    /// <summary>Torneo elegido. El cambio lo aplica <see cref="SeleccionarTorneoAsync"/>.</summary>
+    public Torneo? TorneoSeleccionado
+    {
+        get => _torneoSeleccionado;
+        private set
+        {
+            if (_torneoSeleccionado?.Id != value?.Id)
+            {
+                // El cuadro y la hora pertenecen exclusivamente al torneo seleccionado.
+                _versionConsulta++;
+                _modelo = new();
+                _rondaSeleccionada = null;
+                _ultima = null;
+            }
+            _torneoSeleccionado = value;
+            Notificar();
+        }
+    }
+
+    public bool HayTorneos => TorneosDisponibles.Count > 0;
+
+    /// <summary>Vista activa: Rondas o Próximos.</summary>
+    public VistaCuadro Vista
+    {
+        get => _vista;
+        set
+        {
+            if (_vista == value) return;
+            _vista = value;
+            Notificar();
+            Notificar(nameof(MostrarRondas));
+            Notificar(nameof(MostrarProximos));
+            Notificar(nameof(SinProximos));
+        }
+    }
+
+    public bool MostrarRondas => MostrarContenido && _vista == VistaCuadro.Rondas;
+    public bool MostrarProximos => MostrarContenido && _vista == VistaCuadro.Proximos;
+
     public EstadoConsulta Estado => _modelo.Estado;
-
-    /// <summary>Nombre del torneo, o vacío mientras no hay vista.</summary>
     public string Nombre => _modelo.Vista?.Nombre ?? string.Empty;
 
-    /// <summary>Texto del estado del torneo para la cabecera.</summary>
     public string EstadoTorneoTexto => _modelo.Vista?.Estado switch
     {
         EstadoTorneo.EnCurso => "En curso",
@@ -81,7 +136,6 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
         _ => string.Empty,
     };
 
-    /// <summary>Rondas disponibles para el selector.</summary>
     public IReadOnlyList<RondaCuadro> Rondas => _modelo.Vista?.Rondas ?? Array.Empty<RondaCuadro>();
 
     /// <summary>Ronda elegida en el selector. Al cambiarla se actualizan los cruces visibles.</summary>
@@ -99,11 +153,21 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
 
     /// <summary>Cruces de la ronda seleccionada como filas accesibles.</summary>
     public IReadOnlyList<PartidoFila> PartidosVisibles =>
-        (_rondaSeleccionada?.Partidos ?? Array.Empty<PartidoCuadro>()).Select(PartidoFila.Desde).ToList();
+        (_rondaSeleccionada?.Partidos ?? Array.Empty<PartidoCuadro>())
+        .Select(p => PartidoFila.Desde(p, _rondaSeleccionada!.Nombre)).ToList();
 
-    /// <summary>Campeón cuando el torneo ha finalizado.</summary>
+    /// <summary>Próximos cruces jugables de todo el cuadro, con su ronda.</summary>
+    public IReadOnlyList<PartidoFila> ProximosFilas =>
+        (_modelo.Vista?.Rondas ?? Array.Empty<RondaCuadro>())
+        .SelectMany(r => r.Partidos
+            .Where(p => p.Estado == EstadoPartido.Pendiente && p.Local is not null && p.Visitante is not null)
+            .Select(p => PartidoFila.Desde(p, r.Nombre)))
+        .ToList();
+
+    public bool HayProximos => ProximosFilas.Count > 0;
+    public bool SinProximos => MostrarProximos && !HayProximos;
+
     public JugadorCuadro? Campeon => _modelo.Vista?.Campeon;
-
     public bool HayCampeon => Campeon is not null;
     public string CampeonTexto => Campeon is null ? string.Empty : $"Campeón: {Campeon.NombreJugador} · {Campeon.EquipoFC27}";
 
@@ -112,11 +176,8 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
     public bool MostrarVacio => Estado == EstadoConsulta.Vacio;
     public bool MostrarError => Estado == EstadoConsulta.Error;
     public bool EstaDesactualizado => Estado == EstadoConsulta.Desactualizado;
-
-    /// <summary>El botón «Reintentar» aparece tras un error o con datos desactualizados.</summary>
     public bool MostrarReintentar => Estado is EstadoConsulta.Error or EstadoConsulta.Desactualizado;
 
-    /// <summary>Mensaje de estado para el aviso de vacío, error o desactualizado.</summary>
     public string MensajeEstado => Estado switch
     {
         EstadoConsulta.Vacio => "No hay cuadro disponible todavía.",
@@ -125,26 +186,66 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
         _ => string.Empty,
     };
 
+    /// <summary>Hora de la última consulta correcta, o aviso si aún no la hubo.</summary>
+    public DateTimeOffset? UltimaActualizacion => _ultima;
+    public string UltimaActualizacionTexto => _ultima is { } t
+        ? $"Actualizado a las {t.ToLocalTime():HH:mm:ss}"
+        : "Sin actualizar";
+
+    /// <summary>Carga la lista de torneos y, si no hay uno elegido válido, toma el primero.</summary>
+    public async Task CargarTorneosAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            TorneosDisponibles = await _consulta.ListarAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception) { TorneosDisponibles = Array.Empty<Torneo>(); }
+
+        if (_torneoSeleccionado is null || TorneosDisponibles.All(t => t.Id != _torneoSeleccionado.Id))
+            TorneoSeleccionado = TorneosDisponibles.FirstOrDefault();
+
+        Notificar(nameof(TorneosDisponibles));
+        Notificar(nameof(HayTorneos));
+        Notificar(nameof(TorneoSeleccionado));
+    }
+
+    /// <summary>Elige un torneo y recarga su cuadro.</summary>
+    public async Task SeleccionarTorneoAsync(Torneo? torneo, CancellationToken cancellationToken = default)
+    {
+        TorneoSeleccionado = torneo;
+        await ActualizarAsync(cancellationToken);
+    }
+
     /// <summary>
-    /// Lanza una consulta: muestra la carga, aplica la respuesta o marca el fallo y
-    /// deja seleccionada la primera ronda cuando llega contenido nuevo.
+    /// Consulta el cuadro del torneo elegido: muestra la carga, aplica la respuesta
+    /// o marca el fallo, y anota la hora si el servicio respondió.
     /// </summary>
     public async Task ActualizarAsync(CancellationToken cancellationToken = default)
     {
+        var version = ++_versionConsulta;
         _modelo.Cargando();
         NotificarTodo();
         try
         {
-            var cuadro = await _cargar(cancellationToken).ConfigureAwait(false);
+            var cuadro = _torneoSeleccionado is { } torneo
+                ? await _consulta.ObtenerCuadroAsync(torneo.Id, cancellationToken)
+                : null;
+            cancellationToken.ThrowIfCancellationRequested();
+            if (version != _versionConsulta) return;
             _modelo.Recibir(cuadro);
+            _ultima = _reloj(); // El servicio respondió: cuenta como última actualización correcta.
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception)
         {
-            // Cualquier fallo de la fuente se trata como pérdida de conexión.
+            if (version != _versionConsulta || cancellationToken.IsCancellationRequested) return;
             _modelo.Fallar();
         }
 
-        // Conserva la ronda elegida si sigue existiendo; si no, elige la primera.
         _rondaSeleccionada = Rondas.FirstOrDefault(r => r.Orden == _rondaSeleccionada?.Orden) ?? Rondas.FirstOrDefault();
         NotificarTodo();
     }
@@ -154,9 +255,12 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
         foreach (var propiedad in new[]
         {
             nameof(Estado), nameof(Nombre), nameof(EstadoTorneoTexto), nameof(Rondas),
-            nameof(RondaSeleccionada), nameof(PartidosVisibles), nameof(Campeon), nameof(HayCampeon),
-            nameof(CampeonTexto), nameof(MostrarCargando), nameof(MostrarContenido), nameof(MostrarVacio),
+            nameof(RondaSeleccionada), nameof(PartidosVisibles), nameof(ProximosFilas), nameof(HayProximos),
+            nameof(SinProximos),
+            nameof(Campeon), nameof(HayCampeon), nameof(CampeonTexto), nameof(MostrarCargando),
+            nameof(MostrarContenido), nameof(MostrarRondas), nameof(MostrarProximos), nameof(MostrarVacio),
             nameof(MostrarError), nameof(EstaDesactualizado), nameof(MostrarReintentar), nameof(MensajeEstado),
+            nameof(UltimaActualizacion), nameof(UltimaActualizacionTexto),
         })
             Notificar(propiedad);
     }
@@ -182,11 +286,25 @@ public sealed class ComandoAsync : ICommand
         if (_enCurso) return;
         _enCurso = true;
         CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-        try { await _ejecutar().ConfigureAwait(false); }
+        try { await _ejecutar(); }
         finally
         {
             _enCurso = false;
             CanExecuteChanged?.Invoke(this, EventArgs.Empty);
         }
     }
+}
+
+/// <summary>ICommand síncrono mínimo sin dependencia de MAUI.</summary>
+public sealed class Comando : ICommand
+{
+    private readonly Action _ejecutar;
+
+    public Comando(Action ejecutar) => _ejecutar = ejecutar ?? throw new ArgumentNullException(nameof(ejecutar));
+
+    public event EventHandler? CanExecuteChanged { add { } remove { } }
+
+    public bool CanExecute(object? parameter) => true;
+
+    public void Execute(object? parameter) => _ejecutar();
 }

@@ -20,14 +20,21 @@ Lógica de presentación sin dependencia de MAUI, probada en `tests/FC27.Tests/`
 ## Datos reales (FC27-06)
 
 - `ConsultaTorneosHttp.cs`: cliente `IConsultaTorneos` sobre `HttpClient` que consume el servicio de lectura `FC27.Api` (`GET /api/v1/torneos`, `GET /api/v1/torneos/{id}/cuadro`). Traduce 404 a «no disponible» (null). Probado con un handler simulado.
-- `ConsultaAndroid.CrearCargador(torneoId, baseAddress)`: usa el servicio real cuando hay dirección base; con `null` sirve los datos ficticios de FC27-04.
-- `CuadroPage` (`ConsultaConfig`): consulta al abrir, repite cada `Intervalo` (5 s) con `PeriodicTimer`, mantiene una sola consulta en curso y la cancela al salir (`OnDisappearing`).
+- El servicio de lectura vive en `src/FC27.Api` (minimal API sobre `IConsultaTorneos`). Pruebas de integración en `tests/FC27.Tests/ApiConsultaTests.cs` con SQLite temporal: listado visible, cuadro ordenado, 404 de borrador/inexistente y exclusión de correos.
 
-El servicio de lectura vive en `src/FC27.Api` (minimal API sobre `IConsultaTorneos`). Pruebas de integración en `tests/FC27.Tests/ApiConsultaTests.cs` con SQLite temporal: listado visible, cuadro ordenado, 404 de borrador/inexistente y exclusión de correos.
+## Mejoras de la consulta (configurable y estilo)
+
+Estilo compartido grafito y lima (`#151719`, `#24282C`, `#F2F4F5`, `#C6F653`).
+
+- `ConfiguracionConsulta.cs`: guarda la dirección del servicio por dispositivo (`IAlmacenPreferencias`, en Android MAUI Preferences), valida la URL e identifica el **modo demo** (sin dirección). `ProbadorConexion` prueba la conexión con el listado. `OrigenConsulta.Crear` compone el servicio real o `ConsultaDemo`.
+- `CuadroPageViewModel`: elige un torneo iniciado o finalizado (`TorneosDisponibles`, `SeleccionarTorneoAsync`), alterna **Rondas** y **Próximos** (`VerRondasComando`/`VerProximosComando`), muestra la **hora de la última actualización correcta** (`UltimaActualizacionTexto`) y marca el modo demo. Recibe un reloj inyectable para las pruebas.
+- `CuadroPage.xaml`/`.cs`: ajustes de API (dirección, «Probar conexión», «Guardar»), selector de torneo, aviso de modo demo, pestañas Rondas/Próximos, última actualización y el estilo grafito/lima. Consulta al abrir, repite cada 5 s (`PeriodicTimer`) y cancela al salir.
+
+Pruebas (`dotnet test`: 64 correctas): modelo de vista (selección de torneo, Próximos/Rondas, última actualización, desactualizado y recuperación), `ConfiguracionConsulta` (persistencia, validación, modo demo) y `ProbadorConexion`.
 
 ## Pendiente
 
-- **Alta de `src/FC27.Api` en la solución (Cris):** `TorneoFifaJyC.slnx` es suyo; el proyecto está creado y compila, falta registrarlo en la solución.
+- **Alta de `src/FC27.Api` en la solución (Cris):** `TorneoFifaJyC.slnx` es suyo; el proyecto compila, falta registrarlo.
 - **Registro de `CuadroPage` en navegación (Cris, archivos compartidos):** `AppShell.xaml` y, si se usa DI, `MauiProgram.cs`.
-- **Validación de red Windows–Android y P09–P11 (requiere la demo real):** confirmar que el móvil alcanza el Windows del gestor y cronometrar la actualización (objetivo 10 s) antes de fijar la topología LAN. Fijar `ConsultaConfig.BaseAddress` con la IP del gestor.
-- **Verificación en Android (emulador o dispositivo):** render, nombre largo y TalkBack. No ejecutable en este contenedor Linux.
+- **Validación de red Windows–Android y P09–P11 (demo real):** confirmar que el móvil alcanza el Windows del gestor y cronometrar la actualización (objetivo 10 s) antes de fijar la topología LAN.
+- **Verificación en Android (emulador o dispositivo):** selección de torneo, guardar/probar conexión, modo demo, recuperación tras desconexión, nombre largo y TalkBack. No ejecutable en este contenedor Linux.
