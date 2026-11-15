@@ -50,6 +50,41 @@ public sealed class InscripcionesSqlite(TorneoDbContext db)
         }
     }
 
+    /// <summary>Comprueba que el lote cabe en el borrador y que los correos son únicos en ese torneo.</summary>
+    public async Task ValidarImportacionAsync(int torneoId, IReadOnlyList<DatosInscripcion> datos, CancellationToken ct)
+    {
+        var torneo = await ObtenerBorradorAsync(torneoId, ct);
+        var correos = await Inscritos(torneoId).Select(p => p.Email).ToListAsync(ct);
+        var unicos = new HashSet<string>(correos, StringComparer.OrdinalIgnoreCase);
+        foreach (var fila in datos.Select(Normalizar))
+        {
+            if (!unicos.Add(fila.Email))
+                throw new InvalidOperationException($"Correo duplicado: {fila.Email}.");
+        }
+        if (correos.Count + datos.Count > torneo.NumeroParticipantes)
+            throw new InvalidOperationException($"Solo quedan {torneo.NumeroParticipantes - correos.Count} plazas.");
+    }
+
+    /// <summary>Vuelve a validar el lote bajo bloqueo y guarda todas las inscripciones juntas.</summary>
+    public async Task ImportarAsync(int torneoId, IReadOnlyList<DatosInscripcion> datos, CancellationToken ct)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        await ValidarImportacionAsync(torneoId, datos, ct);
+        var inscritos = datos.Select(Normalizar)
+            .Select(fila => new Participante(0, torneoId, fila.NombreJugador, fila.Email, fila.EquipoFC27)).ToArray();
+        db.Participantes.AddRange(inscritos);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+        }
+        finally
+        {
+            foreach (var inscrito in inscritos)
+                db.Entry(inscrito).State = EntityState.Detached;
+        }
+    }
+
     /// <summary>Actualiza los datos de una inscripción del torneo indicado.</summary>
     public async Task ActualizarInscripcionAsync(int torneoId, int participanteId, DatosInscripcion datos, CancellationToken ct)
     {
