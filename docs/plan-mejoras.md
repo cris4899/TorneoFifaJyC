@@ -30,11 +30,13 @@ En Partidos o Cuadro, abre «Exportar cuadro y resultados CSV» y elige dónde g
 
 - En `master` (`75c1ab4`), 6 pruebas afectadas de CSV y resultados y 70 pruebas de la suite pasaron; la compilación Windows terminó con 0 errores y 0 avisos.
 - P02 reveló en Windows un diálogo técnico en inglés al intentar añadir una inscripción vacía. La corrección está propuesta en el [PR #29](https://github.com/cris4899/TorneoFifaJyC/pull/29): formulario vacío, correo inválido, alta válida y duplicado con distintas mayúsculas comprobados manualmente; 70 pruebas y compilación Windows pasan también en esa rama.
-- P03 solo se comprobó parcialmente en esta sesión: con 2 de 4 inscritos, «Sortear e iniciar» sigue deshabilitado. La prueba completa de sorteo, marcadores, reinicio y exportación sigue pendiente.
+- P03 se completó después en la aceptación Windows: sorteo, marcadores, penaltis, corrección, reinicio y exportación ([informe Windows](pruebas-windows.md)).
 - El selector CSV de Windows se abrió, pero el diálogo del sistema no fue controlable por la automatización; la prueba manual previa está registrada en el PR #26.
-- La aplicación Android compiló con 0 errores y 0 avisos. En emulador Pixel_8, el APK completo abrió la vista de consulta en modo demo: se vieron «Copa DAM», la hora de actualización, Semifinales, un marcador jugado y otro cruce pendiente. La instalación directa del primer APK de depuración no incluía las DLL de despliegue rápido; se repitió con `EmbedAssembliesIntoApk=true` y la pantalla abrió. P09/P10 con API real y desconexión continúan pendientes.
+- La aplicación Android compiló con 0 errores y 0 avisos. En emulador Pixel_8, el APK completo abrió la vista de consulta en modo demo: se vieron «Copa DAM», la hora de actualización, Semifinales, un marcador jugado y otro cruce pendiente. La instalación directa del primer APK de depuración no incluía las DLL de despliegue rápido; se repitió con `EmbedAssembliesIntoApk=true` y la pantalla abrió. P09/P10 con API real y desconexión se completaron después: 7 s de Windows a Android y recuperación en 4,4 s ([informe Windows](pruebas-windows.md)).
 
-## Bloque de aceptación y entrega pendiente
+## Bloque de aceptación y entrega (completado)
+
+Completado el 15 de noviembre de 2026 con los PR #31 a #34. Defectos abiertos y limitaciones: [entrega](entrega.md#defectos-abiertos-y-limitaciones).
 
 Las comprobaciones de código y la prueba manual de Windows del PR #26 no sustituyen las pruebas de aceptación de `docs/pruebas.md`. Trabajad en bloques completos según `docs/relevo.md` y registrad únicamente resultados ejecutados.
 
