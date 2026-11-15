@@ -179,4 +179,37 @@ public sealed class CuadroPageViewModelTests
         Assert.True(vm.HayCampeon);
         Assert.Equal("Campeón: Nico · Equipo Z", vm.CampeonTexto);
     }
+
+    [Fact]
+    public async Task CambiarDeTorneoDescartaLaRespuestaAnteriorAunqueElNuevoFalle()
+    {
+        var consulta = new ConsultaConRespuestaTardia();
+        var vm = new CuadroPageViewModel(consulta);
+        await vm.SeleccionarTorneoAsync(DatosFicticiosConsulta.Cuadro().Torneo);
+        Assert.NotNull(vm.UltimaActualizacion);
+
+        consulta.Retener = true;
+        var anterior = vm.ActualizarAsync();
+        await vm.SeleccionarTorneoAsync(new Torneo(2, "Otro torneo", 4, EstadoTorneo.EnCurso));
+        consulta.Pendiente.SetResult(DatosFicticiosConsulta.Cuadro());
+        await anterior;
+
+        Assert.True(vm.MostrarError);
+        Assert.Empty(vm.Nombre);
+        Assert.Empty(vm.PartidosVisibles);
+        Assert.Null(vm.UltimaActualizacion);
+    }
+
+    private sealed class ConsultaConRespuestaTardia : IConsultaTorneos
+    {
+        public bool Retener { get; set; }
+        public TaskCompletionSource<CuadroTorneo?> Pendiente { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<IReadOnlyList<Torneo>> ListarAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<Torneo>>(Array.Empty<Torneo>());
+
+        public Task<CuadroTorneo?> ObtenerCuadroAsync(int id, CancellationToken ct) =>
+            id == 2 ? Task.FromException<CuadroTorneo?>(new HttpRequestException("sin red"))
+                : Retener ? Pendiente.Task : Task.FromResult<CuadroTorneo?>(DatosFicticiosConsulta.Cuadro());
+    }
 }
