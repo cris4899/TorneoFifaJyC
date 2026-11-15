@@ -6,31 +6,50 @@ namespace FC27.Tests;
 
 public sealed class CuadroPageViewModelTests
 {
-    private static Func<CancellationToken, Task<CuadroTorneo?>> Ok =>
-        _ => Task.FromResult<CuadroTorneo?>(DatosFicticiosConsulta.Cuadro());
+    // Cliente de consulta controlable para las pruebas.
+    private sealed class ConsultaFalsa : IConsultaTorneos
+    {
+        public List<Torneo> Torneos { get; } = new();
+        public Dictionary<int, CuadroTorneo?> Cuadros { get; } = new();
+        public Func<CancellationToken, Task>? AntesDeCuadro { get; set; }
 
-    private static Func<CancellationToken, Task<CuadroTorneo?>> Falla =>
-        _ => throw new InvalidOperationException("sin red");
+        public Task<IReadOnlyList<Torneo>> ListarAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<Torneo>>(Torneos);
+
+        public async Task<CuadroTorneo?> ObtenerCuadroAsync(int torneoId, CancellationToken ct)
+        {
+            if (AntesDeCuadro is not null) await AntesDeCuadro(ct);
+            return Cuadros.TryGetValue(torneoId, out var cuadro) ? cuadro : null;
+        }
+    }
+
+    private static CuadroPageViewModel Demo(Func<DateTimeOffset>? reloj = null) =>
+        new(new ConsultaDemo(), reloj, modoDemo: true);
+
+    private static async Task<CuadroPageViewModel> DemoCargada()
+    {
+        var vm = Demo();
+        await vm.CargarTorneosAsync();
+        await vm.ActualizarAsync();
+        return vm;
+    }
 
     [Fact]
-    public async Task AlCargarSeleccionaLaPrimeraRondaYMuestraSusCruces()
+    public async Task CargarTorneosEligeElPrimeroYMuestraContenido()
     {
-        var vm = new CuadroPageViewModel(Ok);
-        await vm.ActualizarAsync();
+        var vm = await DemoCargada();
 
         Assert.True(vm.MostrarContenido);
+        Assert.True(vm.HayTorneos);
+        Assert.Equal("Copa DAM", vm.TorneoSeleccionado!.Nombre);
         Assert.Equal("Semifinales", vm.RondaSeleccionada!.Nombre);
         Assert.Equal(2, vm.PartidosVisibles.Count);
-        Assert.Equal("Copa DAM", vm.Nombre);
-        Assert.Equal("En curso", vm.EstadoTorneoTexto);
     }
 
     [Fact]
     public async Task CambiarDeRondaActualizaLosCrucesVisibles()
     {
-        var vm = new CuadroPageViewModel(Ok);
-        await vm.ActualizarAsync();
-
+        var vm = await DemoCargada();
         vm.RondaSeleccionada = vm.Rondas.Single(r => r.Nombre == "Final");
 
         Assert.Single(vm.PartidosVisibles);
@@ -40,80 +59,157 @@ public sealed class CuadroPageViewModelTests
     [Fact]
     public async Task LaFilaMuestraMarcadorYGanadorDeUnPartidoJugado()
     {
-        var vm = new CuadroPageViewModel(Ok);
-        await vm.ActualizarAsync();
-
+        var vm = await DemoCargada();
         var semifinal1 = vm.PartidosVisibles.Single(p => p.Posicion == 1);
+
         Assert.Equal("Alex · Equipo A", semifinal1.Local);
         Assert.Equal("2 - 1", semifinal1.Marcador);
         Assert.Equal("Gana Alex", semifinal1.Resultado);
     }
 
     [Fact]
-    public async Task UnFalloSinDatosPreviosMuestraErrorYReintentar()
+    public async Task ProximosSoloIncluyeCrucesPendientesConLasDosPlazas()
     {
-        var vm = new CuadroPageViewModel(Falla);
-        await vm.ActualizarAsync();
+        var vm = await DemoCargada();
 
-        Assert.True(vm.MostrarError);
-        Assert.True(vm.MostrarReintentar);
-        Assert.False(vm.MostrarContenido);
+        var proximo = Assert.Single(vm.ProximosFilas);
+        Assert.Equal("Semifinales", proximo.Ronda);
+        Assert.Equal("Sam · Equipo C", proximo.Local);
+        Assert.True(vm.HayProximos);
     }
 
     [Fact]
-    public async Task UnFalloConDatosPreviosConservaLaVistaComoDesactualizada()
+    public async Task AlternarVistaMuestraProximosORondas()
     {
-        var fuentes = new Queue<Func<CancellationToken, Task<CuadroTorneo?>>>(new[] { Ok, Falla });
-        var vm = new CuadroPageViewModel(ct => fuentes.Dequeue()(ct));
+        var vm = await DemoCargada();
+        Assert.True(vm.MostrarRondas);
+        Assert.False(vm.MostrarProximos);
 
-        await vm.ActualizarAsync(); // contenido
-        await vm.ActualizarAsync(); // fallo con datos previos
+        vm.VerProximosComando.Execute(null);
+
+        Assert.True(vm.MostrarProximos);
+        Assert.False(vm.MostrarRondas);
+    }
+
+    [Fact]
+    public async Task ElModoDemoSeIdentifica()
+    {
+        var vm = await DemoCargada();
+        Assert.True(vm.ModoDemo);
+        Assert.Equal("Modo demo · datos ficticios", vm.ModoDemoTexto);
+    }
+
+    [Fact]
+    public async Task MuestraLaHoraDeLaUltimaActualizacionCorrecta()
+    {
+        var instante = new DateTimeOffset(2026, 11, 15, 12, 32, 0, TimeSpan.Zero);
+        var vm = Demo(() => instante);
+        await vm.CargarTorneosAsync();
+        await vm.ActualizarAsync();
+
+        Assert.Equal(instante, vm.UltimaActualizacion);
+        Assert.StartsWith("Actualizado a las", vm.UltimaActualizacionTexto);
+    }
+
+    [Fact]
+    public async Task UnFalloConDatosPreviosConservaLaVistaYLaHora()
+    {
+        var instante = new DateTimeOffset(2026, 11, 15, 12, 32, 0, TimeSpan.Zero);
+        var consulta = new ConsultaFalsa { Torneos = { new Torneo(1, "Copa DAM", 4, EstadoTorneo.EnCurso) } };
+        consulta.Cuadros[1] = DatosFicticiosConsulta.Cuadro();
+        var vm = new CuadroPageViewModel(consulta, () => instante);
+
+        await vm.CargarTorneosAsync();
+        await vm.ActualizarAsync();                       // contenido con hora
+        consulta.AntesDeCuadro = _ => throw new HttpRequestException("sin red");
+        await vm.ActualizarAsync();                       // fallo
 
         Assert.True(vm.EstaDesactualizado);
-        Assert.True(vm.MostrarContenido);
-        Assert.True(vm.MostrarReintentar);
         Assert.Equal("Copa DAM", vm.Nombre);
+        Assert.Equal(instante, vm.UltimaActualizacion);   // la hora correcta no cambia tras el fallo
     }
 
     [Fact]
     public async Task ReintentarRecuperaElContenido()
     {
-        var fuentes = new Queue<Func<CancellationToken, Task<CuadroTorneo?>>>(new[] { Ok, Falla, Ok });
-        var vm = new CuadroPageViewModel(ct => fuentes.Dequeue()(ct));
+        var consulta = new ConsultaFalsa { Torneos = { new Torneo(1, "Copa DAM", 4, EstadoTorneo.EnCurso) } };
+        consulta.Cuadros[1] = DatosFicticiosConsulta.Cuadro();
+        var vm = new CuadroPageViewModel(consulta);
 
-        await vm.ActualizarAsync(); // contenido
-        await vm.ActualizarAsync(); // desactualizado
-        vm.ReintentarComando.Execute(null);
+        await vm.CargarTorneosAsync();
+        await vm.ActualizarAsync();                        // contenido previo
+        consulta.AntesDeCuadro = _ => throw new HttpRequestException("sin red");
+        await vm.ActualizarAsync();
+        Assert.True(vm.EstaDesactualizado);
 
+        consulta.AntesDeCuadro = null;
+        await vm.ActualizarAsync();
         Assert.True(vm.MostrarContenido);
         Assert.False(vm.MostrarReintentar);
     }
 
     [Fact]
-    public async Task UnTorneoFinalizadoDestacaAlCampeon()
+    public async Task ElegirUnTorneoCargaSuCuadro()
     {
-        var alex = new JugadorCuadro(1, "Alex", "Equipo A");
-        var basico = DatosFicticiosConsulta.Cuadro();
-        var finalizado = basico with
+        var consulta = new ConsultaFalsa
         {
-            Torneo = basico.Torneo with { Estado = EstadoTorneo.Finalizado },
-            Campeon = alex,
+            Torneos =
+            {
+                new Torneo(1, "Copa DAM", 4, EstadoTorneo.EnCurso),
+                new Torneo(2, "Liga JyC", 4, EstadoTorneo.Finalizado),
+            }
         };
-        var vm = new CuadroPageViewModel(_ => Task.FromResult<CuadroTorneo?>(finalizado));
+        var campeon = new JugadorCuadro(9, "Nico", "Equipo Z");
+        consulta.Cuadros[1] = DatosFicticiosConsulta.Cuadro();
+        consulta.Cuadros[2] = new CuadroTorneo(
+            new Torneo(2, "Liga JyC", 4, EstadoTorneo.Finalizado),
+            new[] { new RondaCuadro(1, "Final", new[]
+            {
+                new PartidoCuadro(1, 1, campeon, new JugadorCuadro(8, "Ivo", "Equipo Y"), 3, 1, EstadoPartido.Jugado, 9),
+            }) },
+            campeon);
 
-        await vm.ActualizarAsync();
+        var vm = new CuadroPageViewModel(consulta);
+        await vm.CargarTorneosAsync();
 
+        await vm.SeleccionarTorneoAsync(consulta.Torneos[1]);
+
+        Assert.Equal("Liga JyC", vm.Nombre);
+        Assert.Equal("Finalizado", vm.EstadoTorneoTexto);
         Assert.True(vm.HayCampeon);
-        Assert.Equal("Campeón: Alex · Equipo A", vm.CampeonTexto);
+        Assert.Equal("Campeón: Nico · Equipo Z", vm.CampeonTexto);
     }
 
     [Fact]
-    public async Task UnCuadroNoDisponibleDejaLaPantallaVacia()
+    public async Task CambiarDeTorneoDescartaLaRespuestaAnteriorAunqueElNuevoFalle()
     {
-        var vm = new CuadroPageViewModel(_ => Task.FromResult<CuadroTorneo?>(null));
-        await vm.ActualizarAsync();
+        var consulta = new ConsultaConRespuestaTardia();
+        var vm = new CuadroPageViewModel(consulta);
+        await vm.SeleccionarTorneoAsync(DatosFicticiosConsulta.Cuadro().Torneo);
+        Assert.NotNull(vm.UltimaActualizacion);
 
-        Assert.True(vm.MostrarVacio);
-        Assert.Equal("No hay cuadro disponible todavía.", vm.MensajeEstado);
+        consulta.Retener = true;
+        var anterior = vm.ActualizarAsync();
+        await vm.SeleccionarTorneoAsync(new Torneo(2, "Otro torneo", 4, EstadoTorneo.EnCurso));
+        consulta.Pendiente.SetResult(DatosFicticiosConsulta.Cuadro());
+        await anterior;
+
+        Assert.True(vm.MostrarError);
+        Assert.Empty(vm.Nombre);
+        Assert.Empty(vm.PartidosVisibles);
+        Assert.Null(vm.UltimaActualizacion);
+    }
+
+    private sealed class ConsultaConRespuestaTardia : IConsultaTorneos
+    {
+        public bool Retener { get; set; }
+        public TaskCompletionSource<CuadroTorneo?> Pendiente { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<IReadOnlyList<Torneo>> ListarAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<Torneo>>(Array.Empty<Torneo>());
+
+        public Task<CuadroTorneo?> ObtenerCuadroAsync(int id, CancellationToken ct) =>
+            id == 2 ? Task.FromException<CuadroTorneo?>(new HttpRequestException("sin red"))
+                : Retener ? Pendiente.Task : Task.FromResult<CuadroTorneo?>(DatosFicticiosConsulta.Cuadro());
     }
 }

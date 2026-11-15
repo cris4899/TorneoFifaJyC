@@ -34,3 +34,19 @@ public static class DatosFicticiosConsulta
     public static Task<CuadroTorneo?> CargarAsync(CancellationToken cancellationToken) =>
         Task.FromResult<CuadroTorneo?>(Cuadro());
 }
+
+/// <summary>
+/// Cliente de consulta en modo demo: responde el contrato con los datos ficticios,
+/// sin red. Permite probar la pantalla completa (listado y cuadro) sin servicio.
+/// </summary>
+public sealed class ConsultaDemo : IConsultaTorneos
+{
+    public Task<IReadOnlyList<Torneo>> ListarAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<Torneo>>(new[] { DatosFicticiosConsulta.Cuadro().Torneo });
+
+    public Task<CuadroTorneo?> ObtenerCuadroAsync(int torneoId, CancellationToken cancellationToken)
+    {
+        var cuadro = DatosFicticiosConsulta.Cuadro();
+        return Task.FromResult<CuadroTorneo?>(cuadro.Torneo.Id == torneoId ? cuadro : null);
+    }
+}
