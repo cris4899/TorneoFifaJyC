@@ -224,8 +224,8 @@ public sealed class GestionPage : ContentPage
     {
         const double ancho = 250;
         const double separacion = 44;
-        const double alto = 116;
-        const double paso = 132;
+        const double alto = 140;
+        const double paso = alto + 16;
         var rondas = cuadro.Rondas;
         if (rondas.Count == 0) return;
 
