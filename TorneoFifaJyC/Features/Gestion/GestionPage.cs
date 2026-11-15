@@ -147,6 +147,7 @@ public sealed class GestionPage : ContentPage
             return;
         }
 
+        Accion("Importar inscripciones CSV", contexto => ImportarCsvAsync(contexto, torneo.Id));
         var nombre = Campo("Nombre del jugador");
         var correo = Campo("Correo");
         correo.Keyboard = Keyboard.Email;
@@ -192,6 +193,7 @@ public sealed class GestionPage : ContentPage
     {
         var cuadro = await new ConsultaTorneosSqlite(db).ObtenerCuadroAsync(torneo.Id, CancellationToken.None);
         if (cuadro is null) return;
+        Accion("Exportar cuadro y resultados CSV", _ => ExportarCsvAsync(cuadro));
         if (cuadro.Campeon is { } campeon) Texto($"Campeón: {Nombre(campeon)}", 20);
         if (_seccion == Seccion.Cuadro)
         {
@@ -226,6 +228,68 @@ public sealed class GestionPage : ContentPage
                 }
             }
         }
+    }
+
+    private async Task ImportarCsvAsync(TorneoDbContext db, int torneoId)
+    {
+        var archivo = await FilePicker.Default.PickAsync(new PickOptions
+        {
+            PickerTitle = "Seleccionar inscripciones CSV",
+            FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+            {
+                [DevicePlatform.WinUI] = new[] { ".csv" }
+            })
+        });
+        if (archivo is null) return;
+        await using var origen = await archivo.OpenReadAsync();
+        using var copia = new MemoryStream();
+        var buffer = new byte[8192];
+        int leidos;
+        while ((leidos = await origen.ReadAsync(buffer)) != 0)
+        {
+            if (copia.Length + leidos > 1024 * 1024)
+                throw new FormatException("El archivo CSV supera 1 MB.");
+            copia.Write(buffer, 0, leidos);
+        }
+        copia.Position = 0;
+        var datos = TorneoCsv.LeerInscripciones(copia);
+        var altas = new InscripcionesSqlite(db);
+        await altas.ValidarImportacionAsync(torneoId, datos, CancellationToken.None);
+
+        var vista = new ContentPage { BackgroundColor = Fondo };
+        var contenido = new VerticalStackLayout { Padding = 24, Spacing = 10 };
+        contenido.Add(new Label { Text = $"Importar {datos.Count} inscripciones", FontSize = 24, TextColor = Claro });
+        foreach (var fila in datos)
+            contenido.Add(new Label { Text = $"{fila.NombreJugador} · {fila.Email} · {fila.EquipoFC27}", TextColor = Claro });
+        var confirmar = new Button { Text = "Importar inscripciones", BackgroundColor = Lima, TextColor = Fondo };
+        var cancelar = new Button { Text = "Cancelar" };
+        var respuesta = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        confirmar.Clicked += (_, _) => respuesta.TrySetResult(true);
+        cancelar.Clicked += (_, _) => respuesta.TrySetResult(false);
+        vista.Disappearing += (_, _) => respuesta.TrySetResult(false);
+        contenido.Add(confirmar);
+        contenido.Add(cancelar);
+        vista.Content = new ScrollView { Content = contenido };
+        await Navigation.PushModalAsync(vista);
+        var aceptado = await respuesta.Task;
+        if (Navigation.ModalStack.LastOrDefault() == vista)
+            await Navigation.PopModalAsync();
+        if (aceptado)
+            await altas.ImportarAsync(torneoId, datos, CancellationToken.None);
+    }
+
+    private async Task ExportarCsvAsync(CuadroTorneo cuadro)
+    {
+        var ventana = (Microsoft.UI.Xaml.Window)(Window?.Handler?.PlatformView
+            ?? throw new InvalidOperationException("No hay una ventana disponible para guardar el CSV."));
+        var selector = new Windows.Storage.Pickers.FileSavePicker { SuggestedFileName = $"cuadro-{cuadro.Torneo.Id}" };
+        selector.FileTypeChoices.Add("Archivo CSV", new[] { ".csv" });
+        WinRT.Interop.InitializeWithWindow.Initialize(selector, WinRT.Interop.WindowNative.GetWindowHandle(ventana));
+        var archivo = await selector.PickSaveFileAsync();
+        if (archivo is null) return;
+        var csv = TorneoCsv.ExportarCuadro(cuadro);
+        // La marca UTF-8 ayuda a las hojas de cálculo a detectar tildes y eñes.
+        await File.WriteAllTextAsync(archivo.Path, csv, new System.Text.UTF8Encoding(true));
     }
 
     private void MostrarCuadroVisual(CuadroTorneo cuadro)
