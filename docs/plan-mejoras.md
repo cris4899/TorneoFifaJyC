@@ -19,3 +19,9 @@ Cris entrega el turno tras publicar y verificar el bloque Windows. El relevo inc
 
 - **Windows:** crear torneo, gestionar inscritos, sortear, registrar un empate con penaltis y comprobar el campeón tras reiniciar. Verificar teclado y nombres largos.
 - **Android:** elegir torneo, guardar y probar conexión, comprobar el modo demo, la última actualización y la recuperación tras desconexión. Probar el cuadro con nombres largos en el emulador. TalkBack queda fuera del alcance de las pruebas de entrega.
+
+## Archivos CSV en Windows
+
+En Inscritos, abre «Importar inscripciones CSV» en un torneo en borrador. El archivo usa UTF-8, cabecera nombre,correo,equipo y coma o punto y coma como separador. Revisa la vista previa y confirma. Si faltan plazas o se repite un correo en el archivo o en el torneo, se rechaza el lote completo.
+
+En Partidos o Cuadro, abre «Exportar cuadro y resultados CSV» y elige dónde guardar. El archivo incluye un cruce por fila, los marcadores confirmados y el ganador. Los cruces pendientes dejan el marcador en blanco.
