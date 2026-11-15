@@ -76,3 +76,7 @@ La pantalla de cuadro consulta al abrir, al volver al primer plano y cada 5 segu
 1. **Red:** la propuesta LAN sigue pendiente. Validar conectividad y acordar la configuración de acceso en FC27-06, antes de conectar Android al servicio real.
 2. **Correo:** para la primera entrega se conserva la unicidad global del encargo. El mismo correo queda reservado por su inscripción incluso en otro torneo.
 3. **Empates y correcciones:** la primera entrega guarda el marcador y el ganador por penaltis, sin tanteo de la tanda. El gestor confirma el marcador antes de guardarlo. La corrección de resultados confirmados se reserva para una iteración que defina cómo revertir el avance.
+
+## Corrección de marcadores en Windows
+
+En Partidos, el gestor puede corregir un marcador confirmado mientras el cruce de destino siga pendiente. El formulario recupera el marcador anterior y pide confirmar el efecto sobre el cuadro. Si cambia el ganador, SQLite sustituye únicamente su plaza de destino en la misma transacción. Una final confirmada o un cruce cuyo destino ya se jugó quedan cerrados a correcciones.
