@@ -26,10 +26,20 @@ Pruebas Windows pendientes de [pruebas.md](pruebas.md), según el turno de Cris 
 
 ## Observaciones
 
-- La exportación CSV no muestra confirmación en la app al terminar. El fichero sí se guarda.
-- El reinicio solo se probó con el torneo finalizado, no a mitad de una ronda.
+- La exportación CSV no mostraba confirmación en la app. Corregido en el PR #33: ahora aparece «CSV exportado» con la ruta del fichero (`w09-exportado`).
 - No se probó con lector de pantalla (Narrador). Los nombres accesibles sí se revisaron en el árbol de UI Automation.
+
+## Segunda pasada (PR #33)
+
+| Bloque | Pasos | Resultado |
+| --- | --- | --- |
+| Confirmación de exportación | Exportar «Copa Windows QA». | Aparece «CSV exportado» y «Se guardó en …adro-1.csv». El fichero tiene las 3 filas esperadas. Correcto. |
+| Reinicio a mitad de ronda | Con «Copa CSV QA» en curso, semifinal 1 jugada (2–0) y semifinal 2 pendiente, cerrar la app a la fuerza y abrirla. | El torneo sigue «En curso», la semifinal 1 conserva 2–0 y la final muestra «Eva (Inter) — Por determinar». Correcto. |
+| P09 Windows → Android | Con la API leyendo la base de la app Windows y el emulador Pixel_8 por `adb reverse`, confirmar 3–1 en la semifinal 2. | El emulador muestra «3 - 1» y «Gana Hugo» a los 7 s (objetivo: 10 s). Correcto. |
+| P10 pérdida y recuperación | Parar la API y volver a arrancarla. | A los 5,8 s aparece «Sin conexión. Se muestra la última versión.» con «Reintentar» y se conserva el cuadro. Con la API de nuevo arriba, se recupera solo en 4,4 s. Correcto. |
+
+Los tiempos incluyen el sondeo con `uiautomator dump` (1–2 s por lectura).
 
 ## Capturas
 
-`w01-torneo`, `w02-validacion`, `w03-inscritos`, `w04-sorteo`, `w05-confirmar`, `w06-correccion`, `w07-final` y `w08-csv-error`, en [capturas](capturas/).
+`w01-torneo`, `w02-validacion`, `w03-inscritos`, `w04-sorteo`, `w05-confirmar`, `w06-correccion`, `w07-final`, `w08-csv-error`, `w09-exportado`, `w10-antes-reinicio` y `w11-tras-reinicio`; P09/P10 desde Windows en `p09p10-06-windows-android`, `p09p10-07-sin-conexion` y `p09p10-08-recuperado`, en [capturas](capturas/).

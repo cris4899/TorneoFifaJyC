@@ -25,8 +25,8 @@ Sigue el [manual Android](manual-android.md). Sin una dirección en `ConsultaCon
 
 | Comprobación | Estado |
 | --- | --- |
-| Windows hasta campeón y reapertura | Verificado en FC27-05. Aceptación completa sobre c35fada (validación, sorteo, penaltis, corrección, reinicio, teclado y CSV): [informe Windows](pruebas-windows.md). |
+| Windows hasta campeón y reapertura | Verificado en FC27-05. Aceptación completa sobre c35fada (validación, sorteo, penaltis, corrección, reinicio, teclado y CSV) y reinicio a mitad de ronda: [informe Windows](pruebas-windows.md). |
 | API y cliente de consulta | 53 pruebas correctas en FC27-06. |
 | Compilación Android | Verificada en FC27-06, sin errores ni advertencias. |
-| P09–P11: actualización, recuperación, nombres largos y TalkBack | En emulador: actualización en 4,99 s tras escribir en SQLite, estado vacío, recuperación y lectura de la final con TalkBack. El nombre largo se comprobó en pantalla y en el árbol de accesibilidad. |
+| P09–P11: actualización, recuperación, nombres largos y TalkBack | En emulador: actualización en 4,99 s tras escribir en SQLite, estado vacío, recuperación y lectura de la final con TalkBack. Desde la app Windows: resultado visible en Android en 7 s y recuperación tras caída de la API en 4,4 s ([informe Windows](pruebas-windows.md)). El nombre largo se comprobó en pantalla y en el árbol de accesibilidad. |
 | Capturas Android | [Seis capturas y registro de verificación](capturas/verificacion-android.md). |
