@@ -44,7 +44,7 @@ Sigue el orden de los [turnos exclusivos](reparto.md). Cris termina FC27-03 ante
 
 - [ ] Juan crea el listado y el cuadro. Añade selector de ronda, próximos cruces, resultados y campeón.
 - [ ] Simula carga, lista vacía, cuadro válido, error, datos desactualizados y recuperación con el contrato acordado.
-- [ ] Comprueba la vista en Android, con nombre largo y TalkBack. Indica en el relevo qué necesita del servicio real.
+- [ ] Comprueba la vista en Android, con un nombre largo. Indica en el relevo qué necesita del servicio real.
 
 ## 3. Integrar las plataformas
 

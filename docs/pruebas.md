@@ -14,7 +14,7 @@ Pruebas previstas. Usar datos ficticios y una base SQLite temporal para integrac
 | P08 | RF-02, RF-04 | Intentar persistir FK inexistente, la misma inscripción en ambas plazas y un jugador de otro torneo. | SQLite rechaza la FK inexistente y la fila con plazas duplicadas. El caso de uso rechaza la inscripción cruzada. |
 | P09 | RF-06, RNF-01, RNF-03 | Abrir el cuadro Android, registrar un resultado en Windows y cronometrar hasta que se vea. Inspeccionar listado y respuesta del cuadro. | La demo cumple el objetivo de 10 s, solo muestra torneos iniciados o finalizados y ninguna respuesta contiene correos. |
 | P10 | RF-06, RF-07 | Abrir sin torneos, desconectar antes y después de una consulta válida, reconectar y reintentar. | Se distinguen lista vacía, error y cuadro desactualizado. Al recuperar la conexión se vuelve a mostrar la versión reciente. |
-| P11 | RF-02, RF-06 | Navegar con teclado en Windows y TalkBack en Android. Probar un nombre largo. | El foco sigue el orden visual, los errores y estados tienen texto y el nombre completo puede leerse. |
+| P11 | RF-02, RF-06 | Navegar con teclado en Windows y comprobar en pantalla un nombre largo en Android. | El foco sigue el orden visual, los errores y estados tienen texto y el nombre completo puede leerse. |
 
 ## Guion de demostración
 

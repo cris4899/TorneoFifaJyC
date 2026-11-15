@@ -23,3 +23,7 @@ En Pixel 7 API 36, el cuadro mostró «No hay cuadro disponible todavía» cuand
 ## Confirmación de TalkBack
 
 El 14 de noviembre, Cris confirmó que escuchó TalkBack al enfocar la tarjeta de la final en el Pixel 7 emulado. El árbol de accesibilidad de esa tarjeta incluía ambos nombres, el 3–1 y el ganador. La comprobación auditiva se realizó con los nombres de la final; el nombre largo se verificó por separado en pantalla y en el árbol de accesibilidad. La prueba en la red de entrega con un móvil físico sigue pendiente.
+
+## Alcance vigente (15 de noviembre de 2026)
+
+TalkBack queda fuera de las comprobaciones pendientes y de los criterios de entrega. Las pruebas anteriores se conservan como registro histórico. Se mantiene la comprobación visual con nombres largos.
