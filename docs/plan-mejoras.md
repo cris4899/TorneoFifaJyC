@@ -18,4 +18,4 @@ Cris entrega el turno tras publicar y verificar el bloque Windows. El relevo inc
 ## Comprobaciones
 
 - **Windows:** crear torneo, gestionar inscritos, sortear, registrar un empate con penaltis y comprobar el campeón tras reiniciar. Verificar teclado y nombres largos.
-- **Android:** elegir torneo, guardar y probar conexión, comprobar el modo demo, la última actualización y la recuperación tras desconexión. Probar el cuadro y TalkBack en el emulador.
+- **Android:** elegir torneo, guardar y probar conexión, comprobar el modo demo, la última actualización y la recuperación tras desconexión. Probar el cuadro con nombres largos en el emulador. TalkBack queda fuera del alcance de las pruebas de entrega.
