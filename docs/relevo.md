@@ -8,20 +8,31 @@
 
 Un PR abierto permite revisar y preparar la siguiente tarea. Su fusión permite partir de ese trabajo en una rama nueva. El estado y las pruebas se escriben según lo observado.
 
+## Alcance de cada turno
+
+- Antes de entregar el turno, agrupa las acciones consecutivas y desbloqueadas del mismo responsable en un bloque con entregables comprobables. Incluye implementación o pruebas, verificación y documentación del resultado cuando correspondan.
+- No entregues el turno solo para pedir una decisión, añadir una prueba aislada o comunicar un resultado si puedes completar más trabajo autorizado del mismo bloque. Si aparece un bloqueo, avanza en las tareas independientes disponibles y registra el impedimento exacto.
+- El relevo enumera todas las acciones del siguiente bloque en orden, quién las ejecuta, qué depende de una fusión o de un dispositivo y qué evidencia cierra cada acción. Ejecuta primero las pruebas afectadas y la suite completa una vez por lote; comunica solo resultados observados.
+- Un turno puede acabar con una sola acción cuando no exista otra tarea autorizada y disponible, haya un bloqueo que impida avanzar o la entrega esté realmente cerrada. Explica cuál de estos casos aplica. No inventes trabajo para cumplir una cuota.
+- La persona que recibe el turno comprueba el estado real antes de actuar. Si cambia el plan, registra el nuevo alcance en GitHub y sustituye explícitamente el relevo anterior. Solo trabaja una persona a la vez.
+
 ## Formato de salida
 
 **Pásale este prompt a tu IA**
 
 ```text
 Trabajas en cris4899/TorneoFifaJyC como @DESTINATARIO.
-Abre index.md y AGENTS.md. Tu siguiente acción es [revisar, desbloquear o
-continuar FC27-XX]. El resultado esperado es [entregable comprobable].
+Abre index.md y AGENTS.md. Tu bloque, en orden, es:
+1. [Primera acción y entregable comprobable].
+2. [Siguiente acción desbloqueada y entregable comprobable].
+3. [Verificación, documentación y publicación del lote, si procede].
 
 Contexto: @AUTOR ha dejado FC27-XX [local / PR abierto / fusionado / bloqueado].
 Referencia: [URL del PR, rama o commit disponible].
 Cambios que puedes usar: [rutas, contrato y decisiones acordadas].
 Comprobaciones: [comando y resultado observado, o motivo de no ejecución].
-Dependencia pendiente: [qué falta y quién debe resolverlo, o ninguna].
+Dependencias y medios: [qué requiere fusión, dispositivo o intervención humana; o ninguna].
+Cierre del bloque: [PR, evidencias y resultado esperados].
 
 Comprueba el estado real del PR y de master. Si falta la fusión de una
 dependencia, limita el trabajo dependiente a revisión o preparación y
