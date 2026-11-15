@@ -31,7 +31,8 @@ En Partidos o Cuadro, abre «Exportar cuadro y resultados CSV» y elige dónde g
 - En `master` (`75c1ab4`), 6 pruebas afectadas de CSV y resultados y 70 pruebas de la suite pasaron; la compilación Windows terminó con 0 errores y 0 avisos.
 - P02 reveló en Windows un diálogo técnico en inglés al intentar añadir una inscripción vacía. La corrección está propuesta en el [PR #29](https://github.com/cris4899/TorneoFifaJyC/pull/29): formulario vacío, correo inválido, alta válida y duplicado con distintas mayúsculas comprobados manualmente; 70 pruebas y compilación Windows pasan también en esa rama.
 - P03 solo se comprobó parcialmente en esta sesión: con 2 de 4 inscritos, «Sortear e iniciar» sigue deshabilitado. La prueba completa de sorteo, marcadores, reinicio y exportación sigue pendiente.
-- El selector CSV de Windows se abrió, pero el diálogo del sistema no fue controlable por la automatización; la prueba manual previa está registrada en el PR #26. P09 y P10 con Android continúan pendientes.
+- El selector CSV de Windows se abrió, pero el diálogo del sistema no fue controlable por la automatización; la prueba manual previa está registrada en el PR #26.
+- La aplicación Android compiló con 0 errores y 0 avisos. En emulador Pixel_8, el APK completo abrió la vista de consulta en modo demo: se vieron «Copa DAM», la hora de actualización, Semifinales, un marcador jugado y otro cruce pendiente. La instalación directa del primer APK de depuración no incluía las DLL de despliegue rápido; se repitió con `EmbedAssembliesIntoApk=true` y la pantalla abrió. P09/P10 con API real y desconexión continúan pendientes.
 
 ## Bloque de aceptación y entrega pendiente
 
