@@ -15,10 +15,13 @@ public sealed class GestionPage : ContentPage
     private Seccion _seccion = Seccion.Inscritos;
     private enum Seccion { Inscritos, Partidos, Cuadro }
 
-    private static readonly Color Fondo = Color.FromArgb("#151719");
-    private static readonly Color Superficie = Color.FromArgb("#24282C");
+    private static readonly Color Fondo = Color.FromArgb("#0B1426");
+    private static readonly Color Superficie = Color.FromArgb("#13213B");
+    private static readonly Color Borde = Color.FromArgb("#22355A");
     private static readonly Color Claro = Color.FromArgb("#F2F4F5");
-    private static readonly Color Lima = Color.FromArgb("#C6F653");
+    private static readonly Color Atenuado = Color.FromArgb("#8A97AD");
+    private static readonly Color Lima = Color.FromArgb("#2BD46B");
+    private static readonly Color Oro = Color.FromArgb("#F5C542");
     private bool _ocupada;
 
     public GestionPage()
@@ -73,18 +76,32 @@ public sealed class GestionPage : ContentPage
         var seleccionado = torneos.SingleOrDefault(t => t.Id == _seleccion);
         if (seleccionado is null)
         {
-            Texto("Mis torneos", 32);
-            if (torneos.Count == 0) Texto("Todavía no hay torneos.", 16);
+            Titulo("Mis torneos");
+            if (torneos.Count == 0) Texto("Todavía no hay torneos. Crea el primero abajo.", 16);
+            var inscritos = await db.Participantes.AsNoTracking().GroupBy(p => p.TorneoId)
+                .Select(g => new { g.Key, Total = g.Count() }).ToDictionaryAsync(g => g.Key, g => g.Total);
             foreach (var torneo in torneos)
             {
-                Accion($"{torneo.Nombre} · {Estado(torneo.Estado)} · {torneo.NumeroParticipantes} plazas", _ =>
+                var abrir = Boton("Abrir", _ =>
                 {
                     Abrir(torneo);
                     return Task.CompletedTask;
-                });
+                }, principal: true);
+                SemanticProperties.SetDescription(abrir, $"Abrir {torneo.Nombre}");
+                var fila = new Grid { ColumnDefinitions = new ColumnDefinitionCollection(new(GridLength.Star), new(GridLength.Auto)), ColumnSpacing = 12 };
+                var datos = new VerticalStackLayout { Spacing = 6 };
+                datos.Add(new Label { Text = torneo.Nombre, FontSize = 20, FontFamily = "OpenSansSemibold", TextColor = Claro });
+                var detalle = new HorizontalStackLayout { Spacing = 8 };
+                detalle.Add(Etiqueta(Estado(torneo.Estado), ColorEstado(torneo.Estado)));
+                detalle.Add(new Label { Text = $"{inscritos.GetValueOrDefault(torneo.Id)}/{torneo.NumeroParticipantes} jugadores", TextColor = Atenuado, VerticalOptions = LayoutOptions.Center });
+                datos.Add(detalle);
+                fila.Add(datos);
+                fila.Add(abrir, 1);
+                abrir.VerticalOptions = LayoutOptions.Center;
+                _panel.Add(Tarjeta(fila));
             }
 
-            Texto("Nuevo torneo", 22);
+            Seccionar("Nuevo torneo");
             var nombre = Campo("Nombre del torneo");
             var errorNombre = MensajeCampo();
             var capacidad = new Picker
@@ -126,22 +143,31 @@ public sealed class GestionPage : ContentPage
             _seleccion = null;
             return Task.CompletedTask;
         });
-        Texto(seleccionado.Nombre, 32);
-        Texto(Estado(seleccionado.Estado), 16);
-        var navegacion = new HorizontalStackLayout { Spacing = 8 };
+        Titulo(seleccionado.Nombre);
+        _panel.Add(Etiqueta(Estado(seleccionado.Estado), ColorEstado(seleccionado.Estado)));
+        var navegacion = new HorizontalStackLayout { Spacing = 4 };
         foreach (var seccion in Enum.GetValues<Seccion>())
         {
-            var boton = Boton(seccion.ToString(), _ =>
+            var actual = seccion == _seccion;
+            var boton = Boton(seccion.ToString().ToUpperInvariant(), _ =>
             {
                 _seccion = seccion;
                 return Task.CompletedTask;
-            }, seccion == _seccion);
+            }, false);
+            boton.BackgroundColor = Colors.Transparent;
+            boton.TextColor = actual ? Lima : Atenuado;
+            boton.FontFamily = "OpenSansSemibold";
             boton.IsEnabled = seleccionado.Estado != EstadoTorneo.Borrador || seccion == Seccion.Inscritos;
-            if (seccion == _seccion)
+            if (actual)
                 SemanticProperties.SetDescription(boton, $"{seccion}, sección actual");
-            navegacion.Add(boton);
+            var pestana = new VerticalStackLayout { Spacing = 0 };
+            pestana.Add(boton);
+            // La barra marca la pestaña activa sin depender solo del color del texto.
+            pestana.Add(new BoxView { HeightRequest = 3, Color = actual ? Lima : Colors.Transparent });
+            navegacion.Add(pestana);
         }
         _panel.Add(navegacion);
+        _panel.Add(new BoxView { HeightRequest = 1, Color = Borde });
         if (_seccion == Seccion.Inscritos)
             await MostrarInscripcionesAsync(db, seleccionado);
         else
@@ -165,9 +191,12 @@ public sealed class GestionPage : ContentPage
         if (torneo.Estado != EstadoTorneo.Borrador)
         {
             foreach (var inscrito in inscritos)
-                Texto($"{inscrito.NombreJugador} · {inscrito.EquipoFC27}", 16);
+                _panel.Add(Tarjeta(FilaJugador(inscrito.NombreJugador, inscrito.EquipoFC27, null, true)));
             return;
         }
+        var faltan = torneo.NumeroParticipantes - inscritos.Count;
+        if (faltan > 0)
+            Texto(faltan == 1 ? "Añade 1 jugador más para sortear." : $"Añade {faltan} jugadores más para sortear.", 14);
 
         Accion("Importar inscripciones CSV", contexto => ImportarCsvAsync(contexto, torneo.Id));
         var nombre = Campo("Nombre del jugador");
@@ -217,7 +246,8 @@ public sealed class GestionPage : ContentPage
         _panel.Add(guardar);
         foreach (var inscrito in inscritos)
         {
-            var editar = new Button { Text = $"Editar {inscrito.NombreJugador} · {inscrito.EquipoFC27}" };
+            var editar = new Button { Text = "Editar", CornerRadius = 8, BackgroundColor = Superficie, TextColor = Claro, BorderColor = Borde, BorderWidth = 1 };
+            SemanticProperties.SetDescription(editar, $"Editar {inscrito.NombreJugador} · {inscrito.EquipoFC27}");
             editar.Clicked += (_, _) =>
             {
                 editando = inscrito.Id;
@@ -227,12 +257,17 @@ public sealed class GestionPage : ContentPage
                 guardar.Text = "Guardar inscripción";
                 nombre.Focus();
             };
-            _panel.Add(editar);
-            Accion($"Retirar a {inscrito.NombreJugador}", async contexto =>
+            var retirar = Boton("Retirar", async contexto =>
             {
                 if (await DisplayAlertAsync("Retirar inscripción", inscrito.NombreJugador, "Retirar", "Cancelar"))
                     await new InscripcionesSqlite(contexto).RetirarInscripcionAsync(torneo.Id, inscrito.Id, CancellationToken.None);
-            });
+            }, false);
+            SemanticProperties.SetDescription(retirar, $"Retirar a {inscrito.NombreJugador}");
+            var fila = new Grid { ColumnDefinitions = new ColumnDefinitionCollection(new(GridLength.Star), new(GridLength.Auto), new(GridLength.Auto)), ColumnSpacing = 8 };
+            fila.Add(FilaJugador(inscrito.NombreJugador, inscrito.EquipoFC27, null, true));
+            fila.Add(editar, 1);
+            fila.Add(retirar, 2);
+            _panel.Add(Tarjeta(fila));
         }
         var iniciar = Accion("Sortear e iniciar", async contexto =>
         {
@@ -247,7 +282,17 @@ public sealed class GestionPage : ContentPage
         var cuadro = await new ConsultaTorneosSqlite(db).ObtenerCuadroAsync(torneo.Id, CancellationToken.None);
         if (cuadro is null) return;
         Accion("Exportar cuadro y resultados CSV", _ => ExportarCsvAsync(cuadro));
-        if (cuadro.Campeon is { } campeon) Texto($"Campeón: {Nombre(campeon)}", 20);
+        if (cuadro.Campeon is { } campeon)
+        {
+            var trofeo = new VerticalStackLayout { Spacing = 2 };
+            trofeo.Add(new Label { Text = "🏆 CAMPEÓN", FontFamily = "OpenSansSemibold", CharacterSpacing = 2, TextColor = Fondo });
+            trofeo.Add(new Label { Text = Nombre(campeon), FontSize = 26, FontFamily = "OpenSansSemibold", TextColor = Fondo });
+            var tarjeta = Tarjeta(trofeo);
+            tarjeta.BackgroundColor = Oro;
+            tarjeta.Stroke = Oro;
+            SemanticProperties.SetDescription(tarjeta, $"Campeón: {Nombre(campeon)}");
+            _panel.Add(tarjeta);
+        }
         if (_seccion == Seccion.Cuadro)
         {
             MostrarCuadroVisual(cuadro);
@@ -255,30 +300,42 @@ public sealed class GestionPage : ContentPage
         }
         foreach (var ronda in cuadro.Rondas)
         {
-            Texto(ronda.Nombre, 20);
+            Seccionar(ronda.Nombre);
             foreach (var partido in ronda.Partidos)
             {
-                var cruce = $"{Nombre(partido.Local)} — {Nombre(partido.Visitante)}";
-                if (partido.Estado == EstadoPartido.Jugado)
+                var jugado = partido.Estado == EstadoPartido.Jugado;
+                var contenido = new VerticalStackLayout { Spacing = 8 };
+                var (posicion, _) = Cuadro.Destino(partido.Posicion);
+                var destino = cuadro.Rondas.SingleOrDefault(r => r.Orden == ronda.Orden + 1)?
+                    .Partidos.SingleOrDefault(p => p.Posicion == posicion);
+                var corregible = jugado && destino?.Estado == EstadoPartido.Pendiente;
+                contenido.Add(Etiqueta(!jugado ? "PENDIENTE" : corregible ? "JUGADO" : "CERRADO",
+                    !jugado ? Oro : corregible ? Lima : Atenuado));
+                foreach (var jugador in new[] { partido.Local, partido.Visitante })
                 {
-                    var ganador = partido.GanadorId == partido.Local?.Id ? partido.Local : partido.Visitante;
-                    Texto($"{cruce} · {partido.GolesLocal}–{partido.GolesVisitante} · Ganador: {Nombre(ganador)}", 16);
-                    var (posicion, _) = Cuadro.Destino(partido.Posicion);
-                    var destino = cuadro.Rondas.SingleOrDefault(r => r.Orden == ronda.Orden + 1)?
-                        .Partidos.SingleOrDefault(p => p.Posicion == posicion);
-                    if (destino?.Estado == EstadoPartido.Pendiente && partido.Local is { } local && partido.Visitante is { } visitante)
-                        Accion($"Corregir marcador: {local.NombreJugador} — {visitante.NombreJugador}",
-                            contexto => RegistrarAsync(contexto, torneo.Id, partido.Id, local, visitante, partido));
-                    else
-                        Texto(destino is null ? "Final confirmada." : "El siguiente cruce ya se ha jugado.", 14);
+                    int? goles = jugado ? (jugador == partido.Local ? partido.GolesLocal : partido.GolesVisitante) : null;
+                    var gana = !jugado || jugador?.Id == partido.GanadorId;
+                    contenido.Add(FilaJugador(jugador?.NombreJugador ?? "Por determinar", jugador?.EquipoFC27, goles, gana));
                 }
-                else
+                if (jugado && partido.GolesLocal == partido.GolesVisitante)
+                    contenido.Add(new Label { Text = $"Penaltis: gana {Nombre(partido.GanadorId == partido.Local?.Id ? partido.Local : partido.Visitante)}", TextColor = Atenuado, FontSize = 13 });
+                if (partido.Local is { } local && partido.Visitante is { } visitante)
                 {
-                    Texto(cruce, 16);
-                    if (_seccion == Seccion.Partidos && partido.Local is { } local && partido.Visitante is { } visitante)
-                        Accion($"Registrar resultado: {local.NombreJugador} — {visitante.NombreJugador}",
-                            contexto => RegistrarAsync(contexto, torneo.Id, partido.Id, local, visitante));
+                    Button? accion = null;
+                    if (corregible)
+                        accion = Boton("Corregir marcador", contexto => RegistrarAsync(contexto, torneo.Id, partido.Id, local, visitante, partido), false);
+                    else if (!jugado && _seccion == Seccion.Partidos)
+                        accion = Boton("Registrar resultado", contexto => RegistrarAsync(contexto, torneo.Id, partido.Id, local, visitante), true);
+                    if (accion is not null)
+                    {
+                        SemanticProperties.SetDescription(accion, $"{accion.Text}: {local.NombreJugador} — {visitante.NombreJugador}");
+                        accion.HorizontalOptions = LayoutOptions.Start;
+                        contenido.Add(accion);
+                    }
                 }
+                if (jugado && !corregible && destino is not null)
+                    contenido.Add(new Label { Text = "El siguiente cruce ya se ha jugado.", TextColor = Atenuado, FontSize = 13 });
+                _panel.Add(Tarjeta(contenido));
             }
         }
     }
@@ -368,13 +425,13 @@ public sealed class GestionPage : ContentPage
             lienzo.Children.Add(vista);
         }
 
-        void Linea(double x, double y, double a, double h) =>
-            Colocar(new BoxView { Color = Color.FromArgb("#929BA3"), InputTransparent = true }, x, y, a, h);
+        void Linea(double x, double y, double a, double h, Color color) =>
+            Colocar(new BoxView { Color = color, InputTransparent = true }, x, y, a, h);
 
         for (var indice = 0; indice < rondas.Count; indice++)
         {
             var x = indice * (ancho + separacion);
-            Colocar(new Label { Text = rondas[indice].Nombre, TextColor = Claro, FontSize = 18 }, x, 0, ancho, 36);
+            Colocar(new Label { Text = rondas[indice].Nombre.ToUpperInvariant(), TextColor = Lima, FontSize = 14, CharacterSpacing = 2, FontFamily = "OpenSansSemibold" }, x, 0, ancho, 36);
             foreach (var partido in rondas[indice].Partidos)
             {
                 var centro = Centro(indice, partido.Posicion);
@@ -383,27 +440,24 @@ public sealed class GestionPage : ContentPage
                     // Cada pareja de cruces converge en la posición calculada por el dominio.
                     var destino = Centro(indice + 1, Cuadro.Destino(partido.Posicion).PosicionDestino);
                     var union = x + ancho + separacion / 2;
-                    Linea(x + ancho, centro, separacion / 2, 2);
-                    Linea(union, Math.Min(centro, destino), 2, Math.Abs(centro - destino) + 2);
-                    Linea(union, destino, separacion / 2, 2);
+                    // El ganador avanza por una línea verde; los cruces pendientes quedan en gris.
+                    var color = partido.Estado == EstadoPartido.Jugado ? Lima : Borde;
+                    Linea(x + ancho, centro, separacion / 2, 2, color);
+                    Linea(union, Math.Min(centro, destino), 2, Math.Abs(centro - destino) + 2, color);
+                    Linea(union, destino, separacion / 2, 2, color);
                 }
 
                 var jugado = partido.Estado == EstadoPartido.Jugado;
                 var marcador = jugado ? $"{partido.GolesLocal}–{partido.GolesVisitante}" : "Pendiente";
-                var tarjeta = new VerticalStackLayout { Padding = 10, Spacing = 2, BackgroundColor = Superficie };
+                var filas = new VerticalStackLayout { Spacing = 6, VerticalOptions = LayoutOptions.Center };
                 foreach (var jugador in new[] { partido.Local, partido.Visitante })
                 {
-                    var gano = jugado && jugador is not null && jugador.Id == partido.GanadorId;
-                    tarjeta.Add(new Label
-                    {
-                        Text = gano ? $"Ganador: {Nombre(jugador)}" : Nombre(jugador),
-                        TextColor = gano ? Lima : Claro,
-                        FontSize = 14,
-                        MaxLines = 2,
-                        LineBreakMode = LineBreakMode.TailTruncation
-                    });
+                    int? goles = jugado ? (jugador == partido.Local ? partido.GolesLocal : partido.GolesVisitante) : null;
+                    filas.Add(FilaJugador(jugador?.NombreJugador ?? "Por determinar", jugador?.EquipoFC27, goles,
+                        !jugado || jugador?.Id == partido.GanadorId));
                 }
-                tarjeta.Add(new Label { Text = marcador, TextColor = Claro, FontSize = 16, FontAttributes = FontAttributes.Bold });
+                if (!jugado) filas.Add(new Label { Text = "PENDIENTE", TextColor = Oro, FontSize = 11, CharacterSpacing = 1 });
+                var tarjeta = Tarjeta(filas);
                 var ganador = partido.GanadorId == partido.Local?.Id ? partido.Local : partido.Visitante;
                 SemanticProperties.SetDescription(tarjeta,
                     $"{rondas[indice].Nombre}, partido {partido.Posicion}. {Nombre(partido.Local)} contra {Nombre(partido.Visitante)}. {marcador}."
@@ -412,6 +466,7 @@ public sealed class GestionPage : ContentPage
             }
         }
 
+        lienzo.HorizontalOptions = LayoutOptions.Start;
         _panel.Add(new ScrollView { Orientation = ScrollOrientation.Horizontal, Content = lienzo });
     }
 
@@ -437,7 +492,22 @@ public sealed class GestionPage : ContentPage
             var etiqueta = $"Goles de {Nombre(jugador)}";
             campos.Add(new Label { Text = etiqueta, TextColor = Claro });
             SemanticProperties.SetDescription(campo, etiqueta);
-            campos.Add(campo);
+            campo.WidthRequest = 80;
+            campo.FontSize = 24;
+            campo.HorizontalTextAlignment = TextAlignment.Center;
+            Button Paso(string texto, int cambio, string descripcion)
+            {
+                var boton = new Button { Text = texto, WidthRequest = 48, FontSize = 20, CornerRadius = 8, BackgroundColor = Superficie, TextColor = Claro };
+                SemanticProperties.SetDescription(boton, $"{descripcion} un gol a {jugador.NombreJugador}");
+                boton.Clicked += (_, _) =>
+                    campo.Text = Math.Max(0, (int.TryParse(campo.Text, out var goles) ? goles : 0) + cambio).ToString();
+                return boton;
+            }
+            var fila = new HorizontalStackLayout { Spacing = 8 };
+            fila.Add(Paso("−", -1, "Quitar"));
+            fila.Add(campo);
+            fila.Add(Paso("+", 1, "Sumar"));
+            campos.Add(fila);
         }
 
         bool LeerGoles(out int local, out int visitante)
@@ -464,6 +534,9 @@ public sealed class GestionPage : ContentPage
             if (penaltis.IsVisible)
                 penaltis.SelectedIndex = previo.GanadorId == local.Id ? 0 : 1;
         }
+        // Enter en cualquiera de los marcadores equivale a pulsar «Revisar marcador».
+        golesLocal.Completed += (_, _) => guardar.SendClicked();
+        golesVisitante.Completed += (_, _) => guardar.SendClicked();
         guardar.Clicked += (_, _) =>
         {
             if (!LeerGoles(out var localGoles, out var visitanteGoles))
@@ -520,6 +593,65 @@ public sealed class GestionPage : ContentPage
         jugador is null ? "Por determinar" : $"{jugador.NombreJugador} ({jugador.EquipoFC27})";
 
     private void Texto(string texto, double tamano) => _panel.Add(new Label { Text = texto, FontSize = tamano, TextColor = Claro });
+
+    private void Titulo(string texto) =>
+        _panel.Add(new Label { Text = texto, FontSize = 32, FontFamily = "OpenSansSemibold", TextColor = Claro });
+
+    private void Seccionar(string texto) => _panel.Add(new Label
+    {
+        Text = texto.ToUpperInvariant(), FontSize = 14, CharacterSpacing = 2, FontFamily = "OpenSansSemibold",
+        TextColor = Lima, Margin = new Thickness(0, 12, 0, 0)
+    });
+
+    private static Border Tarjeta(View contenido) => new()
+    {
+        BackgroundColor = Superficie, Stroke = Borde, StrokeThickness = 1, Padding = 14,
+        StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 10 }, Content = contenido
+    };
+
+    private static Label Etiqueta(string texto, Color color) => new()
+    {
+        Text = texto.ToUpperInvariant(), FontSize = 11, CharacterSpacing = 1, FontFamily = "OpenSansSemibold",
+        TextColor = color, HorizontalOptions = LayoutOptions.Start
+    };
+
+    private static Color ColorEstado(EstadoTorneo estado) =>
+        estado == EstadoTorneo.EnCurso ? Lima : estado == EstadoTorneo.Borrador ? Oro : Atenuado;
+
+    /// <summary>Fila de marcador: avatar con iniciales, jugador y equipo, y goles a la derecha.</summary>
+    private static Grid FilaJugador(string nombre, string? equipo, int? goles, bool destacado)
+    {
+        var fila = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitionCollection(new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)),
+            ColumnSpacing = 10
+        };
+        var iniciales = string.Concat(nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
+        // Paleta fija y hash estable: el mismo jugador conserva su color entre sesiones.
+        string[] paleta = ["#2BD46B", "#3FA7FF", "#F5C542", "#FF7A59", "#B48CFF", "#33D6C2"];
+        var semilla = nombre.Aggregate(0, (suma, letra) => suma * 31 + letra);
+        var avatar = new Border
+        {
+            WidthRequest = 32, HeightRequest = 32, StrokeThickness = 0,
+            BackgroundColor = Color.FromArgb(paleta[(semilla & int.MaxValue) % paleta.Length]),
+            StrokeShape = new Microsoft.Maui.Controls.Shapes.Ellipse(),
+            Content = new Label { Text = iniciales, FontSize = 12, FontFamily = "OpenSansSemibold", TextColor = Fondo,
+                HorizontalOptions = LayoutOptions.Center, VerticalOptions = LayoutOptions.Center }
+        };
+        SemanticProperties.SetDescription(avatar, string.Empty);
+        var color = destacado ? Claro : Atenuado;
+        var texto = new VerticalStackLayout { VerticalOptions = LayoutOptions.Center };
+        texto.Add(new Label { Text = nombre, TextColor = color, FontSize = 15, MaxLines = 1, LineBreakMode = LineBreakMode.TailTruncation,
+            FontFamily = destacado ? "OpenSansSemibold" : "OpenSansRegular" });
+        if (equipo is not null)
+            texto.Add(new Label { Text = equipo, TextColor = Atenuado, FontSize = 12, MaxLines = 1, LineBreakMode = LineBreakMode.TailTruncation });
+        fila.Add(avatar);
+        fila.Add(texto, 1);
+        if (goles is int marcador)
+            fila.Add(new Label { Text = marcador.ToString(), FontSize = 24, FontFamily = "OpenSansSemibold", TextColor = destacado ? Lima : Atenuado,
+                VerticalOptions = LayoutOptions.Center }, 2);
+        return fila;
+    }
 
     private Entry Campo(string etiqueta)
     {
