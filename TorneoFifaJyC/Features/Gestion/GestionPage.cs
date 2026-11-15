@@ -343,6 +343,7 @@ public sealed class GestionPage : ContentPage
         var csv = TorneoCsv.ExportarCuadro(cuadro);
         // La marca UTF-8 ayuda a las hojas de cálculo a detectar tildes y eñes.
         await File.WriteAllTextAsync(archivo.Path, csv, new System.Text.UTF8Encoding(true));
+        await DisplayAlertAsync("CSV exportado", $"Se guardó en {archivo.Path}", "Cerrar");
     }
 
     private void MostrarCuadroVisual(CuadroTorneo cuadro)
