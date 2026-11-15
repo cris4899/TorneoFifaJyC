@@ -25,11 +25,11 @@ La IA debe confirmar la identidad, el turno activo y el ID FC27. Si el turno es 
 
 ### Formato de las instrucciones
 
-1. **Haz esto.** Indica quién actúa y da una acción concreta. Ejemplo para Cris: abre el [PR #1](https://github.com/cris4899/TorneoFifaJyC/pull/1) y comprueba que las observaciones estén resueltas.
-2. **Luego esto.** Da el siguiente paso y el resultado esperado. Si depende del primero, dilo en una frase. Ejemplo: si encuentras el resultado, anótalo en el SDD. Si falta, pide a Juan que lo publique.
+1. **Haz esto.** Úsalo solo cuando la IA necesite intervención humana. Explica el bloqueo y da la acción exacta.
+2. **Luego esto.** Úsalo si queda una segunda acción que solo puede hacer la persona. Indica el resultado esperado.
 3. **Prompt de relevo.** Inclúyelo solo cuando corresponda según [el protocolo](relevo.md). Usa «Pásale este prompt a tu IA» y un bloque listo para copiar con el destinatario, el enlace y la siguiente acción.
 
-Da uno o dos pasos por turno cuando haga falta confirmar un resultado antes de seguir. Si se pueden ejecutar seguidos, agrúpalos en una lista breve.
+La IA ejecuta las comprobaciones a su alcance, incluidas las pruebas visuales con la app o el emulador, y comunica el resultado observado.
 
 ## 3. Hacer visible el trabajo
 

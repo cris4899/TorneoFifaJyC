@@ -208,6 +208,14 @@ public sealed class GestionPage : ContentPage
                 {
                     var ganador = partido.GanadorId == partido.Local?.Id ? partido.Local : partido.Visitante;
                     Texto($"{cruce} · {partido.GolesLocal}–{partido.GolesVisitante} · Ganador: {Nombre(ganador)}", 16);
+                    var (posicion, _) = Cuadro.Destino(partido.Posicion);
+                    var destino = cuadro.Rondas.SingleOrDefault(r => r.Orden == ronda.Orden + 1)?
+                        .Partidos.SingleOrDefault(p => p.Posicion == posicion);
+                    if (destino?.Estado == EstadoPartido.Pendiente && partido.Local is { } local && partido.Visitante is { } visitante)
+                        Accion($"Corregir marcador: {local.NombreJugador} — {visitante.NombreJugador}",
+                            contexto => RegistrarAsync(contexto, torneo.Id, partido.Id, local, visitante, partido));
+                    else
+                        Texto(destino is null ? "Final confirmada." : "El siguiente cruce ya se ha jugado.", 14);
                 }
                 else
                 {
@@ -290,9 +298,9 @@ public sealed class GestionPage : ContentPage
     }
 
     private async Task RegistrarAsync(TorneoDbContext db, int torneoId, int partidoId,
-        JugadorCuadro local, JugadorCuadro visitante)
+        JugadorCuadro local, JugadorCuadro visitante, PartidoCuadro? previo = null)
     {
-        var formulario = new ContentPage { Title = "Registrar resultado", BackgroundColor = Fondo };
+        var formulario = new ContentPage { Title = previo is null ? "Registrar resultado" : "Corregir marcador", BackgroundColor = Fondo };
         var campos = new VerticalStackLayout { Padding = 24, Spacing = 12 };
         var golesLocal = new Entry { Keyboard = Keyboard.Numeric, BackgroundColor = Superficie, TextColor = Claro };
         var golesVisitante = new Entry { Keyboard = Keyboard.Numeric, BackgroundColor = Superficie, TextColor = Claro };
@@ -331,6 +339,13 @@ public sealed class GestionPage : ContentPage
 
         golesLocal.TextChanged += ActualizarDesempate;
         golesVisitante.TextChanged += ActualizarDesempate;
+        if (previo is not null)
+        {
+            golesLocal.Text = previo.GolesLocal.ToString();
+            golesVisitante.Text = previo.GolesVisitante.ToString();
+            if (penaltis.IsVisible)
+                penaltis.SelectedIndex = previo.GanadorId == local.Id ? 0 : 1;
+        }
         guardar.Clicked += (_, _) =>
         {
             if (!LeerGoles(out var localGoles, out var visitanteGoles))
@@ -370,10 +385,17 @@ public sealed class GestionPage : ContentPage
         if (resultado is null) return;
 
         var ganador = Cuadro.ResolverGanador(local.Id, visitante.Id, resultado);
-        if (await DisplayAlertAsync("Confirmar resultado",
-            $"{Nombre(local)} {resultado.GolesLocal}–{resultado.GolesVisitante} {Nombre(visitante)}\nGanador: {Nombre(ganador == local.Id ? local : visitante)}",
+        var efecto = previo is null ? "" : "\nSi cambia el ganador, se sustituirá su plaza en el siguiente cruce.";
+        if (await DisplayAlertAsync(previo is null ? "Confirmar resultado" : "Confirmar corrección",
+            $"{Nombre(local)} {resultado.GolesLocal}–{resultado.GolesVisitante} {Nombre(visitante)}\nGanador: {Nombre(ganador == local.Id ? local : visitante)}{efecto}",
             "Confirmar", "Cancelar"))
-            await new CuadroSqlite(db).RegistrarResultadoAsync(torneoId, partidoId, resultado, CancellationToken.None);
+        {
+            var cuadro = new CuadroSqlite(db);
+            if (previo is null)
+                await cuadro.RegistrarResultadoAsync(torneoId, partidoId, resultado, CancellationToken.None);
+            else
+                await cuadro.CorregirResultadoAsync(torneoId, partidoId, resultado, CancellationToken.None);
+        }
     }
 
     private static string Nombre(JugadorCuadro? jugador) =>

@@ -58,7 +58,7 @@ SQLite valida claves foráneas activas, unicidad, estados y valores de fila. En 
 2. Barajar los inscritos y emparejar consecutivamente. Para N inscritos, crear log₂(N) fases y N−1 partidos. Las rondas posteriores empiezan con ambas plazas vacías.
 3. Para cada fase, usar el número de partidos como etiqueta: 32 → Treintaidosavos, 16 → Dieciseisavos, 8 → Octavos, 4 → Cuartos, 2 → Semifinales, 1 → Final.
 4. En la fase siguiente, el ganador del partido en posición p ocupa el partido en posición techo(p/2). Las posiciones impares alimentan la plaza local y las pares la visitante.
-5. Guardar marcador, ganador y avance en una transacción. En la final, guardar resultado y estado Finalizado juntos. Un reintento idéntico devuelve el resultado guardado. Un marcador distinto para un partido ya jugado se rechaza y se muestra al gestor. Se propone confirmar el marcador antes de grabarlo y dejar las correcciones para una iteración con reglas de propagación.
+5. Guardar marcador, ganador y avance en una transacción. En la final, guardar resultado y estado Finalizado juntos. Un reintento idéntico devuelve el resultado guardado. El registro de un marcador distinto para un partido ya jugado se rechaza. El gestor confirma el marcador antes de grabarlo y usa la acción de corrección para un resultado ya registrado.
 
 El alta del cuadro también es transaccional. La escritura debe verificar el estado previo bajo la misma transacción y un intento concurrente que perdió la carrera debe releer y aplicar la regla de reintento o conflicto. Las consultas del cuadro leen una instantánea consistente.
 
@@ -75,4 +75,8 @@ La pantalla de cuadro consulta al abrir, al volver al primer plano y cada 5 segu
 
 1. **Red:** la propuesta LAN sigue pendiente. Validar conectividad y acordar la configuración de acceso en FC27-06, antes de conectar Android al servicio real.
 2. **Correo:** para la primera entrega se conserva la unicidad global del encargo. El mismo correo queda reservado por su inscripción incluso en otro torneo.
-3. **Empates y correcciones:** la primera entrega guarda el marcador y el ganador por penaltis, sin tanteo de la tanda. El gestor confirma el marcador antes de guardarlo. La corrección de resultados confirmados se reserva para una iteración que defina cómo revertir el avance.
+3. **Empates y correcciones:** la primera entrega guarda el marcador y el ganador por penaltis, sin tanteo de la tanda. El gestor confirma el marcador antes de guardarlo. La corrección de resultados confirmados sigue las reglas de la sección «Corrección de marcadores en Windows».
+
+## Corrección de marcadores en Windows
+
+En Partidos, el gestor puede corregir un marcador confirmado mientras el cruce de destino siga pendiente. El formulario recupera el marcador anterior y pide confirmar el efecto sobre el cuadro. Si cambia el ganador, SQLite sustituye únicamente su plaza de destino en la misma transacción. Una final confirmada o un cruce cuyo destino ya se jugó quedan cerrados a correcciones.
