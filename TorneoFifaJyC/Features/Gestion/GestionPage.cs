@@ -86,6 +86,7 @@ public sealed class GestionPage : ContentPage
 
             Texto("Nuevo torneo", 22);
             var nombre = Campo("Nombre del torneo");
+            var errorNombre = MensajeCampo();
             var capacidad = new Picker
             {
                 Title = "Capacidad", ItemsSource = Cuadro.CapacidadesValidas.ToArray(), SelectedIndex = 0,
@@ -93,9 +94,30 @@ public sealed class GestionPage : ContentPage
             };
             SemanticProperties.SetDescription(capacidad, "Capacidad del torneo");
             _panel.Add(capacidad);
-            Accion("Crear torneo", async contexto =>
-                Abrir(await new InscripcionesSqlite(contexto).CrearAsync(nombre.Text,
-                    (int)capacidad.SelectedItem, CancellationToken.None)), principal: true);
+            var crear = new Button
+            {
+                Text = "Crear torneo", CornerRadius = 8, MinimumHeightRequest = 42,
+                BackgroundColor = Lima, TextColor = Fondo
+            };
+            crear.Clicked += async (_, _) =>
+            {
+                var nombreTexto = nombre.Text?.Trim();
+                var nombreVacio = string.IsNullOrWhiteSpace(nombreTexto);
+                var nombreDuplicado = !nombreVacio && torneos.Any(torneo =>
+                    string.Equals(torneo.Nombre, nombreTexto, StringComparison.OrdinalIgnoreCase));
+                errorNombre.Text = nombreVacio ? "Indica el nombre del torneo." : "Ya existe un torneo con ese nombre.";
+                errorNombre.IsVisible = nombreVacio || nombreDuplicado;
+                if (errorNombre.IsVisible)
+                {
+                    nombre.Focus();
+                    return;
+                }
+
+                await EjecutarAsync(async contexto =>
+                    Abrir(await new InscripcionesSqlite(contexto).CrearAsync(nombreTexto!,
+                        (int)capacidad.SelectedItem, CancellationToken.None)));
+            };
+            _panel.Add(crear);
             return;
         }
 
@@ -149,19 +171,50 @@ public sealed class GestionPage : ContentPage
 
         Accion("Importar inscripciones CSV", contexto => ImportarCsvAsync(contexto, torneo.Id));
         var nombre = Campo("Nombre del jugador");
+        var errorNombre = MensajeCampo();
         var correo = Campo("Correo");
         correo.Keyboard = Keyboard.Email;
+        var errorCorreo = MensajeCampo();
         var equipo = Campo("Equipo FC27");
+        var errorEquipo = MensajeCampo();
         int? editando = null;
-        var guardar = Accion("Añadir participante", async contexto =>
+        var guardar = new Button
         {
-            var altas = new InscripcionesSqlite(contexto);
-            var datos = new DatosInscripcion(nombre.Text, correo.Text, equipo.Text);
-            if (editando is int id)
-                await altas.ActualizarInscripcionAsync(torneo.Id, id, datos, CancellationToken.None);
-            else
-                await altas.InscribirAsync(torneo.Id, datos, CancellationToken.None);
-        });
+            Text = "Añadir participante", CornerRadius = 8, MinimumHeightRequest = 42,
+            BackgroundColor = Superficie, TextColor = Claro
+        };
+        guardar.Clicked += async (_, _) =>
+        {
+            var correoTexto = correo.Text?.Trim();
+            var correoVacio = string.IsNullOrWhiteSpace(correoTexto);
+            var correoInvalido = !correoVacio && (!System.Net.Mail.MailAddress.TryCreate(correoTexto, out var direccion)
+                || direccion.Address != correoTexto);
+            var correoDuplicado = !correoVacio && !correoInvalido && inscritos.Any(inscrito =>
+                inscrito.Id != editando && string.Equals(inscrito.Email, correoTexto, StringComparison.OrdinalIgnoreCase));
+            errorNombre.Text = "Indica el nombre del jugador.";
+            errorNombre.IsVisible = string.IsNullOrWhiteSpace(nombre.Text);
+            errorCorreo.Text = correoVacio ? "Indica el correo." : correoInvalido
+                ? "Introduce un correo válido." : "Este correo ya está inscrito en el torneo.";
+            errorCorreo.IsVisible = correoVacio || correoInvalido || correoDuplicado;
+            errorEquipo.Text = "Indica el equipo FC27.";
+            errorEquipo.IsVisible = string.IsNullOrWhiteSpace(equipo.Text);
+            if (errorNombre.IsVisible || errorCorreo.IsVisible || errorEquipo.IsVisible)
+            {
+                (errorNombre.IsVisible ? nombre : errorCorreo.IsVisible ? correo : equipo).Focus();
+                return;
+            }
+
+            await EjecutarAsync(async contexto =>
+            {
+                var altas = new InscripcionesSqlite(contexto);
+                var datos = new DatosInscripcion(nombre.Text, correoTexto!, equipo.Text);
+                if (editando is int id)
+                    await altas.ActualizarInscripcionAsync(torneo.Id, id, datos, CancellationToken.None);
+                else
+                    await altas.InscribirAsync(torneo.Id, datos, CancellationToken.None);
+            });
+        };
+        _panel.Add(guardar);
         foreach (var inscrito in inscritos)
         {
             var editar = new Button { Text = $"Editar {inscrito.NombreJugador} · {inscrito.EquipoFC27}" };
@@ -474,6 +527,13 @@ public sealed class GestionPage : ContentPage
         SemanticProperties.SetDescription(campo, etiqueta);
         _panel.Add(campo);
         return campo;
+    }
+
+    private Label MensajeCampo()
+    {
+        var mensaje = new Label { TextColor = Color.FromArgb("#FFB4AB"), IsVisible = false };
+        _panel.Add(mensaje);
+        return mensaje;
     }
 
     private Button Accion(string texto, Func<TorneoDbContext, Task> accion, bool principal = false)
