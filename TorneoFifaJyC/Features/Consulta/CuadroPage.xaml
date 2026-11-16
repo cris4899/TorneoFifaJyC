@@ -5,136 +5,167 @@
              x:Class="TorneoFifaJyC.Features.Consulta.CuadroPage"
              x:DataType="vm:CuadroPageViewModel"
              Title="Cuadro del torneo"
-             BackgroundColor="{StaticResource Grafito}">
+             BackgroundColor="{StaticResource Fondo}">
 
+    <!-- Paleta «aspecto de torneo», alineada con GestionPage (PR #36). -->
     <ContentPage.Resources>
-        <Color x:Key="Grafito">#151719</Color>
-        <Color x:Key="Superficie">#24282C</Color>
+        <Color x:Key="Fondo">#0B1426</Color>
+        <Color x:Key="Superficie">#13213B</Color>
+        <Color x:Key="Borde">#22355A</Color>
         <Color x:Key="Claro">#F2F4F5</Color>
-        <Color x:Key="Lima">#C6F653</Color>
+        <Color x:Key="Atenuado">#8A97AD</Color>
+        <Color x:Key="Verde">#2BD46B</Color>
+        <Color x:Key="VerdeOscuro">#138A44</Color>
+        <Color x:Key="Oro">#F5C542</Color>
     </ContentPage.Resources>
 
-    <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="12">
+    <!-- Fila 0: aviso de conexión y Reintentar, fijos arriba y visibles sin desplazarse (#37). -->
+    <Grid RowDefinitions="Auto,*">
 
-            <!-- Ajustes del servicio -->
-            <Border BackgroundColor="{StaticResource Superficie}" Padding="12" StrokeThickness="0"
-                    StrokeShape="RoundRectangle 10">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="Servicio de consulta" FontAttributes="Bold" TextColor="{StaticResource Claro}"
-                           SemanticProperties.HeadingLevel="Level2" />
-                    <Entry x:Name="DireccionEntry" Placeholder="http://192.168.1.50:5080"
-                           Keyboard="Url" TextColor="{StaticResource Claro}" PlaceholderColor="#8A9096"
-                           SemanticProperties.Description="Dirección del servicio de consulta" />
-                    <HorizontalStackLayout Spacing="8">
-                        <Button Text="Probar conexión" Clicked="OnProbarConexion"
-                                BackgroundColor="{StaticResource Superficie}" TextColor="{StaticResource Claro}"
-                                BorderColor="{StaticResource Lima}" BorderWidth="1"
-                                SemanticProperties.Hint="Comprueba que el servicio responde" />
-                        <Button Text="Guardar" Clicked="OnGuardarDireccion"
-                                BackgroundColor="{StaticResource Lima}" TextColor="{StaticResource Grafito}"
-                                SemanticProperties.Hint="Guarda la dirección y recarga" />
-                    </HorizontalStackLayout>
-                    <Label x:Name="EstadoConexionLabel" TextColor="{StaticResource Claro}" />
-                    <Label Text="{Binding ModoDemoTexto}" IsVisible="{Binding ModoDemo}"
-                           TextColor="{StaticResource Lima}" FontAttributes="Bold"
-                           SemanticProperties.Description="{Binding ModoDemoTexto}" />
-                </VerticalStackLayout>
-            </Border>
+        <Border Grid.Row="0" IsVisible="{Binding MostrarReintentar}"
+                BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" StrokeThickness="1"
+                Padding="12" Margin="16,12,16,0" StrokeShape="RoundRectangle 10">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Label Grid.Column="0" VerticalOptions="Center" TextColor="{StaticResource Claro}"
+                       Text="{Binding MensajeEstado}" SemanticProperties.Description="{Binding MensajeEstado}" />
+                <Button Grid.Column="1" Text="Reintentar" Command="{Binding ReintentarComando}"
+                        BackgroundColor="{StaticResource Verde}" TextColor="{StaticResource Fondo}"
+                        SemanticProperties.Hint="Vuelve a consultar el cuadro" />
+            </Grid>
+        </Border>
 
-            <!-- Selección de torneo -->
-            <Picker x:Name="TorneoPicker" Title="Elige un torneo"
-                    ItemsSource="{Binding TorneosDisponibles}" ItemDisplayBinding="{Binding Nombre}"
-                    SelectedItem="{Binding TorneoSeleccionado, Mode=OneWay}"
-                    SelectedIndexChanged="OnTorneoCambiado"
-                    IsVisible="{Binding HayTorneos}"
-                    TextColor="{StaticResource Claro}" TitleColor="{StaticResource Claro}"
-                    BackgroundColor="{StaticResource Superficie}"
-                    SemanticProperties.Hint="Elige el torneo que quieres consultar" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16" Spacing="12">
 
-            <!-- Cabecera y última actualización -->
-            <VerticalStackLayout Spacing="2">
-                <Label Text="{Binding Nombre}" FontSize="22" FontAttributes="Bold"
-                       TextColor="{StaticResource Claro}" SemanticProperties.HeadingLevel="Level1" />
-                <Label Text="{Binding EstadoTorneoTexto}" FontSize="14" TextColor="#9BA1A6"
-                       SemanticProperties.Description="Estado del torneo" />
-                <Label Text="{Binding UltimaActualizacionTexto}" FontSize="12" TextColor="#9BA1A6"
-                       SemanticProperties.Description="{Binding UltimaActualizacionTexto}" />
-            </VerticalStackLayout>
+                <!-- Ajustes del servicio -->
+                <Border BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" StrokeThickness="1"
+                        Padding="14" StrokeShape="RoundRectangle 10">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Servicio de consulta" FontAttributes="Bold" FontFamily="OpenSansSemibold"
+                               TextColor="{StaticResource Claro}" SemanticProperties.HeadingLevel="Level2" />
+                        <Entry x:Name="DireccionEntry" Placeholder="http://192.168.1.50:5080"
+                               Keyboard="Url" TextColor="{StaticResource Claro}" PlaceholderColor="{StaticResource Atenuado}"
+                               SemanticProperties.Description="Dirección del servicio de consulta" />
+                        <HorizontalStackLayout Spacing="8">
+                            <Button Text="Probar conexión" Clicked="OnProbarConexion"
+                                    BackgroundColor="{StaticResource Superficie}" TextColor="{StaticResource Claro}"
+                                    BorderColor="{StaticResource Verde}" BorderWidth="1"
+                                    SemanticProperties.Hint="Comprueba que el servicio responde" />
+                            <Button Text="Guardar" Clicked="OnGuardarDireccion"
+                                    BackgroundColor="{StaticResource Verde}" TextColor="{StaticResource Fondo}"
+                                    SemanticProperties.Hint="Guarda la dirección y recarga" />
+                        </HorizontalStackLayout>
+                        <Label x:Name="EstadoConexionLabel" TextColor="{StaticResource Claro}" />
+                        <Label Text="{Binding ModoDemoTexto}" IsVisible="{Binding ModoDemo}"
+                               TextColor="{StaticResource Verde}" FontAttributes="Bold"
+                               SemanticProperties.Description="{Binding ModoDemoTexto}" />
+                    </VerticalStackLayout>
+                </Border>
 
-            <!-- Alternar vista Rondas / Próximos -->
-            <HorizontalStackLayout Spacing="8" IsVisible="{Binding MostrarContenido}">
-                <Button Text="Rondas" Command="{Binding VerRondasComando}"
-                        BackgroundColor="{StaticResource Superficie}" TextColor="{StaticResource Claro}"
-                        SemanticProperties.Hint="Muestra el cuadro por rondas" />
-                <Button Text="Próximos" Command="{Binding VerProximosComando}"
-                        BackgroundColor="{StaticResource Superficie}" TextColor="{StaticResource Claro}"
-                        SemanticProperties.Hint="Muestra los próximos cruces" />
-            </HorizontalStackLayout>
-
-            <!-- Vista Rondas -->
-            <VerticalStackLayout Spacing="8" IsVisible="{Binding MostrarRondas}">
-                <Picker Title="Elige una ronda" ItemsSource="{Binding Rondas}"
-                        ItemDisplayBinding="{Binding Nombre}" SelectedItem="{Binding RondaSeleccionada}"
+                <!-- Selección de torneo -->
+                <Picker x:Name="TorneoPicker" Title="Elige un torneo"
+                        ItemsSource="{Binding TorneosDisponibles}" ItemDisplayBinding="{Binding Nombre}"
+                        SelectedItem="{Binding TorneoSeleccionado, Mode=OneWay}"
+                        SelectedIndexChanged="OnTorneoCambiado"
+                        IsVisible="{Binding HayTorneos}"
                         TextColor="{StaticResource Claro}" TitleColor="{StaticResource Claro}"
                         BackgroundColor="{StaticResource Superficie}"
-                        SemanticProperties.Hint="Cambia la ronda que se muestra" />
-                <CollectionView ItemsSource="{Binding PartidosVisibles}">
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:PartidoFila">
-                            <Border Margin="0,6" Padding="12" StrokeThickness="0"
-                                    BackgroundColor="{StaticResource Superficie}" StrokeShape="RoundRectangle 8">
-                                <VerticalStackLayout Spacing="4" SemanticProperties.Description="{Binding Descripcion}">
-                                    <Label Text="{Binding Local}" FontAttributes="Bold" TextColor="{StaticResource Claro}" />
-                                    <Label Text="{Binding Visitante}" FontAttributes="Bold" TextColor="{StaticResource Claro}" />
-                                    <Label Text="{Binding Marcador}" FontSize="18" TextColor="{StaticResource Lima}" />
-                                    <Label Text="{Binding Resultado}" TextColor="#9BA1A6" />
-                                </VerticalStackLayout>
-                            </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
+                        SemanticProperties.Hint="Elige el torneo que quieres consultar" />
+
+                <!-- Campeón: tarjeta dorada -->
+                <Border IsVisible="{Binding HayCampeon}" BackgroundColor="{StaticResource Oro}"
+                        Stroke="{StaticResource Oro}" Padding="14" StrokeShape="RoundRectangle 10"
+                        SemanticProperties.Description="{Binding CampeonTexto}">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="🏆 CAMPEÓN" FontFamily="OpenSansSemibold" CharacterSpacing="2"
+                               TextColor="{StaticResource Fondo}" />
+                        <Label Text="{Binding CampeonTexto}" FontSize="20" FontFamily="OpenSansSemibold"
+                               TextColor="{StaticResource Fondo}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Cabecera y última actualización -->
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="{Binding Nombre}" FontSize="22" FontAttributes="Bold" FontFamily="OpenSansSemibold"
+                           TextColor="{StaticResource Claro}" SemanticProperties.HeadingLevel="Level1" />
+                    <Label Text="{Binding EstadoTorneoTexto}" FontSize="14" TextColor="{StaticResource Atenuado}"
+                           SemanticProperties.Description="Estado del torneo" />
+                    <Label Text="{Binding UltimaActualizacionTexto}" FontSize="12" TextColor="{StaticResource Atenuado}"
+                           SemanticProperties.Description="{Binding UltimaActualizacionTexto}" />
+                </VerticalStackLayout>
+
+                <!-- Alternar vista Rondas / Próximos -->
+                <HorizontalStackLayout Spacing="8" IsVisible="{Binding MostrarContenido}">
+                    <Button Text="Rondas" Command="{Binding VerRondasComando}"
+                            BackgroundColor="{StaticResource Superficie}" TextColor="{StaticResource Claro}"
+                            BorderColor="{StaticResource Borde}" BorderWidth="1"
+                            SemanticProperties.Hint="Muestra el cuadro por rondas" />
+                    <Button Text="Próximos" Command="{Binding VerProximosComando}"
+                            BackgroundColor="{StaticResource Superficie}" TextColor="{StaticResource Claro}"
+                            BorderColor="{StaticResource Borde}" BorderWidth="1"
+                            SemanticProperties.Hint="Muestra los próximos cruces" />
+                </HorizontalStackLayout>
+
+                <!-- Vista Rondas -->
+                <VerticalStackLayout Spacing="8" IsVisible="{Binding MostrarRondas}">
+                    <Picker Title="Elige una ronda" ItemsSource="{Binding Rondas}"
+                            ItemDisplayBinding="{Binding Nombre}" SelectedItem="{Binding RondaSeleccionada}"
+                            TextColor="{StaticResource Claro}" TitleColor="{StaticResource Claro}"
+                            BackgroundColor="{StaticResource Superficie}"
+                            SemanticProperties.Hint="Cambia la ronda que se muestra" />
+                    <CollectionView ItemsSource="{Binding PartidosVisibles}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PartidoFila">
+                                <Border Margin="0,6" Padding="14" StrokeThickness="1" Stroke="{StaticResource Borde}"
+                                        BackgroundColor="{StaticResource Superficie}" StrokeShape="RoundRectangle 10">
+                                    <VerticalStackLayout Spacing="4" SemanticProperties.Description="{Binding Descripcion}">
+                                        <Label Text="{Binding Ronda}" FontSize="11" CharacterSpacing="1"
+                                               TextColor="{StaticResource Atenuado}" />
+                                        <Label Text="{Binding Local}" FontAttributes="Bold" TextColor="{StaticResource Claro}" />
+                                        <Label Text="{Binding Visitante}" FontAttributes="Bold" TextColor="{StaticResource Claro}" />
+                                        <Label Text="{Binding Marcador}" FontSize="20" FontFamily="OpenSansSemibold"
+                                               TextColor="{StaticResource Verde}" />
+                                        <Label Text="{Binding Resultado}" TextColor="{StaticResource Atenuado}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- Vista Próximos -->
+                <VerticalStackLayout Spacing="8" IsVisible="{Binding MostrarProximos}">
+                    <Label Text="No hay próximos cruces disponibles." IsVisible="{Binding SinProximos}"
+                           TextColor="{StaticResource Atenuado}" />
+                    <CollectionView ItemsSource="{Binding ProximosFilas}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PartidoFila">
+                                <Border Margin="0,6" Padding="14" StrokeThickness="1" Stroke="{StaticResource Borde}"
+                                        BackgroundColor="{StaticResource Superficie}" StrokeShape="RoundRectangle 10">
+                                    <VerticalStackLayout Spacing="4" SemanticProperties.Description="{Binding Descripcion}">
+                                        <Label Text="{Binding Ronda}" FontSize="11" CharacterSpacing="1"
+                                               TextColor="{StaticResource Verde}" />
+                                        <Label Text="{Binding Local}" FontAttributes="Bold" TextColor="{StaticResource Claro}" />
+                                        <Label Text="{Binding Visitante}" FontAttributes="Bold" TextColor="{StaticResource Claro}" />
+                                        <Label Text="PENDIENTE" FontSize="11" CharacterSpacing="1" TextColor="{StaticResource Oro}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- Avisos de carga y vacío -->
+                <VerticalStackLayout Spacing="8" IsVisible="{Binding MostrarCargando}">
+                    <ActivityIndicator IsRunning="{Binding MostrarCargando}" Color="{StaticResource Verde}" />
+                    <Label Text="Cargando el cuadro…" TextColor="{StaticResource Claro}" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+                <Label Text="{Binding MensajeEstado}" IsVisible="{Binding MostrarVacio}"
+                       TextColor="{StaticResource Claro}" HorizontalTextAlignment="Center"
+                       SemanticProperties.Description="{Binding MensajeEstado}" />
+
             </VerticalStackLayout>
-
-            <!-- Vista Próximos -->
-            <VerticalStackLayout Spacing="8" IsVisible="{Binding MostrarProximos}">
-                <Label Text="No hay próximos cruces disponibles." IsVisible="{Binding SinProximos}"
-                       TextColor="#9BA1A6" />
-                <CollectionView ItemsSource="{Binding ProximosFilas}">
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:PartidoFila">
-                            <Border Margin="0,6" Padding="12" StrokeThickness="0"
-                                    BackgroundColor="{StaticResource Superficie}" StrokeShape="RoundRectangle 8">
-                                <VerticalStackLayout Spacing="4" SemanticProperties.Description="{Binding Descripcion}">
-                                    <Label Text="{Binding Ronda}" FontSize="12" TextColor="{StaticResource Lima}" />
-                                    <Label Text="{Binding Local}" FontAttributes="Bold" TextColor="{StaticResource Claro}" />
-                                    <Label Text="{Binding Visitante}" FontAttributes="Bold" TextColor="{StaticResource Claro}" />
-                                </VerticalStackLayout>
-                            </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-            </VerticalStackLayout>
-
-            <!-- Avisos -->
-            <VerticalStackLayout Spacing="8" IsVisible="{Binding MostrarCargando}">
-                <ActivityIndicator IsRunning="{Binding MostrarCargando}" Color="{StaticResource Lima}" />
-                <Label Text="Cargando el cuadro…" TextColor="{StaticResource Claro}" HorizontalOptions="Center" />
-            </VerticalStackLayout>
-            <Label Text="{Binding MensajeEstado}" IsVisible="{Binding MostrarVacio}"
-                   TextColor="{StaticResource Claro}" HorizontalTextAlignment="Center"
-                   SemanticProperties.Description="{Binding MensajeEstado}" />
-
-            <!-- Pie: campeón, desactualizado y Reintentar -->
-            <Label Text="{Binding CampeonTexto}" IsVisible="{Binding HayCampeon}"
-                   FontAttributes="Bold" FontSize="16" TextColor="{StaticResource Lima}"
-                   SemanticProperties.HeadingLevel="Level2" SemanticProperties.Description="{Binding CampeonTexto}" />
-            <Label Text="{Binding MensajeEstado}" IsVisible="{Binding EstaDesactualizado}" TextColor="#9BA1A6" />
-            <Button Text="Reintentar" Command="{Binding ReintentarComando}" IsVisible="{Binding MostrarReintentar}"
-                    BackgroundColor="{StaticResource Lima}" TextColor="{StaticResource Grafito}"
-                    SemanticProperties.Hint="Vuelve a consultar el cuadro" />
-
-        </VerticalStackLayout>
-    </ScrollView>
+        </ScrollView>
+    </Grid>
 
 </ContentPage>
