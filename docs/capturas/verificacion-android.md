@@ -27,3 +27,11 @@ El 14 de noviembre, Cris confirmó que escuchó TalkBack al enfocar la tarjeta d
 ## Alcance vigente (15 de noviembre de 2026)
 
 TalkBack queda fuera de las comprobaciones pendientes y de los criterios de entrega. Las pruebas anteriores se conservan como registro histórico. Se mantiene la comprobación visual con nombres largos.
+
+## Aviso fijo y aspecto de torneo (17 de noviembre de 2026, #37 y #38)
+
+En el emulador Pixel 8, con la API de Windows en `127.0.0.1:5080` y `adb reverse tcp:5080 tcp:5080`, se probó el PR #42. Al detener la API con el cuadro desplazado hacia abajo, el aviso «Sin conexión. Se muestra la última versión.» y «Reintentar» quedaron visibles arriba sin desplazarse ([and-37-aviso-fijo.png](and-37-aviso-fijo.png)). Al reiniciar la API y pulsar «Reintentar», el cuadro se recargó y el aviso desapareció.
+
+La paleta nueva se ve en las tarjetas de marcador ([and-38-tarjetas.png](and-38-tarjetas.png)) y en la tarjeta dorada del campeón ([and-38-campeon.png](and-38-campeon.png)). Con nombres ficticios largos en una copia temporal de la base, el campeón, el título y los cruces se ajustan en varias líneas sin cortes ([and-38-nombre-largo.png](and-38-nombre-largo.png)).
+
+Observaciones menores, fuera del alcance del PR: el título «Elige un torneo» del diálogo del selector aparece blanco sobre blanco, y el selector conserva el nombre anterior del torneo hasta volver a cargar la lista.
