@@ -55,3 +55,13 @@ Comprobado el 17 de noviembre de 2026 en la rama `codex/cris4899/teclado-contras
 | Contraste | Texto atenuado `#A3AFC4` (antes `#8A97AD`). | 8,3:1 sobre el fondo, 7,25:1 sobre las tarjetas y 5,5:1 sobre el borde; antes era 4,12:1 sobre el borde. Supera 4,5:1 en todos los casos. |
 
 Se recapturaron `w01`–`w07`, `w10` y `w11`. El sorteo es aleatorio y esta vez emparejó Carla–Bea y Dani–Ana. `w08` y `w09` se conservan porque los diálogos de archivo del sistema no admiten UI Automation.
+
+## Estadísticas y modo presentación (#40)
+
+| Prueba | Acción | Resultado |
+|---|---|---|
+| Tabla de estadísticas | Abrir la pestaña Cuadro de «Copa Windows QA» (finalizado). | Muestra PJ, GF, GC y DG por jugador, ordenados por diferencia, y «Máximo goleador: Dani (Ajax) · 4 goles». Correcto. Captura `w12-estadisticas`. |
+| Empate de goleadores | Pruebas `EstadisticasTests`. | Con empate salen todos los máximos goleadores. Correcto. |
+| Modo presentación | Pulsar «Modo presentación» y después Esc. | El cuadro ocupa toda la pantalla y Esc vuelve a la vista normal. Correcto. |
+
+Suite completa: 75 pruebas superadas.

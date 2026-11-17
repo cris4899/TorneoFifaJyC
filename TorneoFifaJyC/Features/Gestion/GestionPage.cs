@@ -295,7 +295,9 @@ public sealed class GestionPage : ContentPage
         }
         if (_seccion == Seccion.Cuadro)
         {
-            MostrarCuadroVisual(cuadro);
+            Accion("Modo presentación", _ => PresentarAsync(cuadro));
+            _panel.Add(new ScrollView { Orientation = ScrollOrientation.Horizontal, Content = CrearCuadroVisual(cuadro) });
+            MostrarEstadisticas(cuadro);
             return;
         }
         foreach (var ronda in cuadro.Rondas)
@@ -403,14 +405,14 @@ public sealed class GestionPage : ContentPage
         await DisplayAlertAsync("CSV exportado", $"Se guardó en {archivo.Path}", "Cerrar");
     }
 
-    private void MostrarCuadroVisual(CuadroTorneo cuadro)
+    private static View CrearCuadroVisual(CuadroTorneo cuadro)
     {
         const double ancho = 250;
         const double separacion = 44;
         const double alto = 140;
         const double paso = alto + 16;
         var rondas = cuadro.Rondas;
-        if (rondas.Count == 0) return;
+        if (rondas.Count == 0) return new ContentView();
 
         var lienzo = new AbsoluteLayout
         {
@@ -467,7 +469,84 @@ public sealed class GestionPage : ContentPage
         }
 
         lienzo.HorizontalOptions = LayoutOptions.Start;
-        _panel.Add(new ScrollView { Orientation = ScrollOrientation.Horizontal, Content = lienzo });
+        return lienzo;
+    }
+
+    private void MostrarEstadisticas(CuadroTorneo cuadro)
+    {
+        var filas = Estadisticas.PorJugador(cuadro);
+        if (filas.Count == 0) return;
+        Seccionar("Estadísticas");
+        var maximos = Estadisticas.MaximosGoleadores(filas);
+        if (maximos.Count > 0)
+            _panel.Add(new Label
+            {
+                Text = $"Máximo goleador: {string.Join(", ", maximos.Select(m => Nombre(m.Jugador)))} · {maximos[0].GolesFavor} goles",
+                TextColor = Oro, FontFamily = "OpenSansSemibold"
+            });
+
+        var tabla = new Grid { ColumnSpacing = 24, RowSpacing = 6 };
+        tabla.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        for (var i = 0; i < 4; i++) tabla.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        void Fila(int fila, Color color, params string[] celdas)
+        {
+            tabla.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            for (var columna = 0; columna < celdas.Length; columna++)
+                tabla.Add(new Label
+                {
+                    Text = celdas[columna], TextColor = color,
+                    HorizontalTextAlignment = columna == 0 ? TextAlignment.Start : TextAlignment.End
+                }, columna, fila);
+        }
+        Fila(0, Atenuado, "Jugador", "PJ", "GF", "GC", "DG");
+        for (var i = 0; i < filas.Count; i++)
+        {
+            var e = filas[i];
+            Fila(i + 1, Claro, Nombre(e.Jugador), e.Jugados.ToString(), e.GolesFavor.ToString(), e.GolesContra.ToString(),
+                e.Diferencia.ToString("+0;−0;0"));
+        }
+        SemanticProperties.SetDescription(tabla, "Estadísticas por jugador: " + string.Join(". ", filas.Select(e =>
+            $"{Nombre(e.Jugador)}, partidos jugados {e.Jugados}, goles a favor {e.GolesFavor}, goles en contra {e.GolesContra}")));
+        _panel.Add(Tarjeta(tabla));
+    }
+
+    private async Task PresentarAsync(CuadroTorneo cuadro)
+    {
+        var contenido = new VerticalStackLayout { Padding = 32, Spacing = 24 };
+        contenido.Add(new Label { Text = cuadro.Torneo.Nombre, FontSize = 40, FontFamily = "OpenSansSemibold", TextColor = Claro });
+        if (cuadro.Campeon is { } campeon)
+            contenido.Add(new Label { Text = $"🏆 Campeón: {Nombre(campeon)}", FontSize = 28, FontFamily = "OpenSansSemibold", TextColor = Oro });
+        contenido.Add(new Label { Text = "Esc para salir", TextColor = Atenuado });
+        // El lienzo se amplía para que se lea desde lejos al proyectarlo.
+        var lienzo = CrearCuadroVisual(cuadro);
+        lienzo.Scale = 1.4;
+        lienzo.AnchorX = 0;
+        lienzo.AnchorY = 0;
+        contenido.Add(lienzo);
+        var vista = new ContentPage
+        {
+            Title = "Modo presentación", BackgroundColor = Fondo,
+            Content = new ScrollView { Orientation = ScrollOrientation.Both, Content = contenido }
+        };
+
+        var ventana = (Microsoft.UI.Xaml.Window?)Window?.Handler?.PlatformView;
+        void Salir()
+        {
+            ventana?.AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
+            if (Navigation.ModalStack.LastOrDefault() == vista)
+                _ = Navigation.PopModalAsync();
+        }
+        vista.HandlerChanged += (_, _) =>
+        {
+            if (vista.Handler?.PlatformView is not Microsoft.UI.Xaml.UIElement nativo) return;
+            var esc = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = Windows.System.VirtualKey.Escape };
+            esc.Invoked += (_, args) => { args.Handled = true; Salir(); };
+            nativo.KeyboardAccelerators.Add(esc);
+        };
+        vista.Disappearing += (_, _) =>
+            ventana?.AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
+        await Navigation.PushModalAsync(vista);
+        ventana?.AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen);
     }
 
     private async Task RegistrarAsync(TorneoDbContext db, int torneoId, int partidoId,
