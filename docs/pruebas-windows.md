@@ -43,3 +43,13 @@ Los tiempos incluyen el sondeo con `uiautomator dump` (1–2 s por lectura).
 ## Capturas
 
 `w01-torneo`, `w02-validacion`, `w03-inscritos`, `w04-sorteo`, `w05-confirmar`, `w06-correccion`, `w07-final`, `w08-csv-error`, `w09-exportado`, `w10-antes-reinicio` y `w11-tras-reinicio`; P09/P10 desde Windows en `p09p10-06-windows-android`, `p09p10-07-sin-conexion` y `p09p10-08-recuperado`, en [capturas](capturas/).
+
+## Estadísticas y modo presentación (#40)
+
+| Prueba | Acción | Resultado |
+|---|---|---|
+| Tabla de estadísticas | Abrir la pestaña Cuadro de «Copa Windows QA» (finalizado). | Muestra PJ, GF, GC y DG por jugador, ordenados por diferencia, y «Máximo goleador: Dani (Ajax) · 4 goles». Correcto. Captura `w12-estadisticas`. |
+| Empate de goleadores | Pruebas `EstadisticasTests`. | Con empate salen todos los máximos goleadores. Correcto. |
+| Modo presentación | Pulsar «Modo presentación» y después Esc. | El cuadro ocupa toda la pantalla y Esc vuelve a la vista normal. Correcto. |
+
+Suite completa: 75 pruebas superadas.
