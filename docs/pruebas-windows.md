@@ -44,6 +44,18 @@ Los tiempos incluyen el sondeo con `uiautomator dump` (1–2 s por lectura).
 
 `w01-torneo`, `w02-validacion`, `w03-inscritos`, `w04-sorteo`, `w05-confirmar`, `w06-correccion`, `w07-final`, `w08-csv-error`, `w09-exportado`, `w10-antes-reinicio` y `w11-tras-reinicio`; P09/P10 desde Windows en `p09p10-06-windows-android`, `p09p10-07-sin-conexion` y `p09p10-08-recuperado`, en [capturas](capturas/).
 
+## Teclado y contraste (#39)
+
+Comprobado el 17 de noviembre de 2026 en la rama `codex/cris4899/teclado-contraste-39`, con base limpia y los mismos datos ficticios. Tras la prueba se restauró la base original de la app.
+
+| Bloque | Pasos | Resultado |
+| --- | --- | --- |
+| Esc | Abrir «Registrar resultado», escribir un gol y pulsar Esc. | El formulario se cierra sin guardar, como «Cancelar». Correcto. |
+| Orden de Tab | Recorrer el formulario con Tab. | Goles local, goles visitante, ganador por penaltis (si hay empate), «Revisar marcador» y «Cancelar». Los botones − y + quedan fuera del recorrido y se siguen pudiendo pulsar. Correcto. |
+| Contraste | Texto atenuado `#A3AFC4` (antes `#8A97AD`). | 8,3:1 sobre el fondo, 7,25:1 sobre las tarjetas y 5,5:1 sobre el borde; antes era 4,12:1 sobre el borde. Supera 4,5:1 en todos los casos. |
+
+Se recapturaron `w01`–`w07`, `w10` y `w11`. El sorteo es aleatorio y esta vez emparejó Carla–Bea y Dani–Ana. `w08` y `w09` se conservan porque los diálogos de archivo del sistema no admiten UI Automation.
+
 ## Estadísticas y modo presentación (#40)
 
 | Prueba | Acción | Resultado |
