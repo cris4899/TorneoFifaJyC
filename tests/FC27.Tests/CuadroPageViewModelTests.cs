@@ -212,4 +212,33 @@ public sealed class CuadroPageViewModelTests
             id == 2 ? Task.FromException<CuadroTorneo?>(new HttpRequestException("sin red"))
                 : Retener ? Pendiente.Task : Task.FromResult<CuadroTorneo?>(DatosFicticiosConsulta.Cuadro());
     }
+
+    // Devuelve instancias nuevas en cada consulta, como el cliente real.
+    private sealed class ConsultaRenovada : IConsultaTorneos
+    {
+        public Task<IReadOnlyList<Torneo>> ListarAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<Torneo>>(new[]
+            {
+                new Torneo(1, "Copa DAM", 4, EstadoTorneo.EnCurso),
+                new Torneo(2, "Liga JyC", 4, EstadoTorneo.Finalizado),
+            });
+
+        public Task<CuadroTorneo?> ObtenerCuadroAsync(int id, CancellationToken ct) =>
+            Task.FromResult<CuadroTorneo?>(DatosFicticiosConsulta.Cuadro());
+    }
+
+    [Fact]
+    public async Task TrasRecargarElTorneoSeleccionadoApuntaALaInstanciaDeLaNuevaLista()
+    {
+        var vm = new CuadroPageViewModel(new ConsultaRenovada());
+        await vm.CargarTorneosAsync();
+        await vm.SeleccionarTorneoAsync(vm.TorneosDisponibles.Single(t => t.Id == 2));
+
+        await vm.CargarTorneosAsync(); // nueva lista con instancias distintas
+
+        // Conserva el torneo y, además, la referencia está en la lista nueva:
+        // así el Picker sigue mostrando su nombre tras recargar.
+        Assert.Equal(2, vm.TorneoSeleccionado!.Id);
+        Assert.Same(vm.TorneosDisponibles.Single(t => t.Id == 2), vm.TorneoSeleccionado);
+    }
 }
