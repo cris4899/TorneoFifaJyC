@@ -19,7 +19,7 @@ public sealed class GestionPage : ContentPage
     private static readonly Color Superficie = Color.FromArgb("#13213B");
     private static readonly Color Borde = Color.FromArgb("#22355A");
     private static readonly Color Claro = Color.FromArgb("#F2F4F5");
-    private static readonly Color Atenuado = Color.FromArgb("#8A97AD");
+    private static readonly Color Atenuado = Color.FromArgb("#A3AFC4");
     private static readonly Color Lima = Color.FromArgb("#2BD46B");
     private static readonly Color Oro = Color.FromArgb("#F5C542");
     private bool _ocupada;
@@ -497,7 +497,12 @@ public sealed class GestionPage : ContentPage
             campo.HorizontalTextAlignment = TextAlignment.Center;
             Button Paso(string texto, int cambio, string descripcion)
             {
+                // Fuera del Tab: el foco salta de un marcador al otro y luego a penaltis y botones.
                 var boton = new Button { Text = texto, WidthRequest = 48, FontSize = 20, CornerRadius = 8, BackgroundColor = Superficie, TextColor = Claro };
+                boton.HandlerChanged += (_, _) =>
+                {
+                    if (boton.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Control nativo) nativo.IsTabStop = false;
+                };
                 SemanticProperties.SetDescription(boton, $"{descripcion} un gol a {jugador.NombreJugador}");
                 boton.Clicked += (_, _) =>
                     campo.Text = Math.Max(0, (int.TryParse(campo.Text, out var goles) ? goles : 0) + cambio).ToString();
@@ -560,6 +565,14 @@ public sealed class GestionPage : ContentPage
         };
         cancelar.Clicked += (_, _) => respuesta.TrySetResult(null);
         formulario.Disappearing += (_, _) => respuesta.TrySetResult(null);
+        // Esc cierra el formulario igual que «Cancelar».
+        formulario.HandlerChanged += (_, _) =>
+        {
+            if (formulario.Handler?.PlatformView is not Microsoft.UI.Xaml.UIElement nativo) return;
+            var esc = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = Windows.System.VirtualKey.Escape };
+            esc.Invoked += (_, args) => { args.Handled = true; respuesta.TrySetResult(null); };
+            nativo.KeyboardAccelerators.Add(esc);
+        };
         AgregarMarcador(local, golesLocal);
         AgregarMarcador(visitante, golesVisitante);
         SemanticProperties.SetDescription(penaltis, "Ganador por penaltis");
