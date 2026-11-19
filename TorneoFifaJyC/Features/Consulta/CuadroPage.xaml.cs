@@ -1,4 +1,5 @@
 using FC27.Core;
+using TorneoFifaJyC.Controls;
 
 namespace TorneoFifaJyC.Features.Consulta;
 
@@ -34,6 +35,29 @@ public partial class CuadroPage : ContentPage
         var (consulta, demo) = OrigenConsulta.Crear(_config);
         _modelo = new CuadroPageViewModel(consulta, modoDemo: demo);
         BindingContext = _modelo;
+        Aplicar();
+    }
+
+    // Las vistas se cambian desde el menú flotante; Ajustes oculta el contenido del torneo.
+    private bool _ajustes;
+
+    private void Mostrar(VistaCuadro vista)
+    {
+        _ajustes = false;
+        _modelo.Vista = vista;
+        Aplicar();
+    }
+
+    private void Aplicar()
+    {
+        AjustesPanel.IsVisible = _ajustes;
+        ContenidoPanel.IsVisible = !_ajustes;
+        Menu.Establecer(
+        [
+            new OpcionMenu("Próximos", () => Mostrar(VistaCuadro.Proximos), !_ajustes && _modelo.Vista == VistaCuadro.Proximos),
+            new OpcionMenu("Rondas", () => Mostrar(VistaCuadro.Rondas), !_ajustes && _modelo.Vista == VistaCuadro.Rondas),
+            new OpcionMenu("Ajustes", () => { _ajustes = true; Aplicar(); }, _ajustes)
+        ]);
     }
 
     protected override void OnAppearing()

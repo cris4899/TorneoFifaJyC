@@ -3,25 +3,27 @@ using FC27.Core;
 using FC27.Data;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using TorneoFifaJyC.Controls;
 
 namespace TorneoFifaJyC.Features.Gestion;
 
 /// <summary>Administración local de torneos desde Windows.</summary>
 public sealed class GestionPage : ContentPage
 {
-    private readonly VerticalStackLayout _panel = new() { Padding = 24, Spacing = 12 };
+    private readonly VerticalStackLayout _panel = new() { Padding = new Thickness(24, 24, 24, 96), Spacing = 12 };
+    private readonly MenuFlotante _menu = new();
     private readonly DbContextOptions<TorneoDbContext> _options;
     private int? _seleccion;
     private Seccion _seccion = Seccion.Inscritos;
     private enum Seccion { Inscritos, Partidos, Cuadro }
 
-    private static readonly Color Fondo = Color.FromArgb("#0B1426");
-    private static readonly Color Superficie = Color.FromArgb("#13213B");
-    private static readonly Color Borde = Color.FromArgb("#22355A");
-    private static readonly Color Claro = Color.FromArgb("#F2F4F5");
-    private static readonly Color Atenuado = Color.FromArgb("#A3AFC4");
-    private static readonly Color Lima = Color.FromArgb("#2BD46B");
-    private static readonly Color Oro = Color.FromArgb("#F5C542");
+    private static readonly Color Fondo = (Color)Application.Current!.Resources["Fondo"];
+    private static readonly Color Superficie = (Color)Application.Current!.Resources["Superficie"];
+    private static readonly Color Borde = (Color)Application.Current!.Resources["Borde"];
+    private static readonly Color Claro = (Color)Application.Current!.Resources["Claro"];
+    private static readonly Color Atenuado = (Color)Application.Current!.Resources["Atenuado"];
+    private static readonly Color Lima = (Color)Application.Current!.Resources["Verde"];
+    private static readonly Color Oro = (Color)Application.Current!.Resources["Oro"];
     private bool _ocupada;
 
     public GestionPage()
@@ -34,7 +36,7 @@ public sealed class GestionPage : ContentPage
             ForeignKeys = true
         };
         _options = new DbContextOptionsBuilder<TorneoDbContext>().UseSqlite(conexion.ToString()).Options;
-        Content = new ScrollView { Content = _panel };
+        Content = new Grid { Children = { new ScrollView { Content = _panel }, _menu } };
     }
 
     protected override async void OnAppearing()
@@ -74,6 +76,7 @@ public sealed class GestionPage : ContentPage
         var torneos = await db.Torneos.AsNoTracking().OrderBy(t => t.Nombre).ToListAsync();
         _panel.Clear();
         var seleccionado = torneos.SingleOrDefault(t => t.Id == _seleccion);
+        ActualizarMenu(seleccionado);
         if (seleccionado is null)
         {
             Titulo("Mis torneos");
@@ -138,40 +141,32 @@ public sealed class GestionPage : ContentPage
             return;
         }
 
-        Accion("Volver a Mis torneos", _ =>
-        {
-            _seleccion = null;
-            return Task.CompletedTask;
-        });
         Titulo(seleccionado.Nombre);
         _panel.Add(Etiqueta(Estado(seleccionado.Estado), ColorEstado(seleccionado.Estado)));
-        var navegacion = new HorizontalStackLayout { Spacing = 4 };
-        foreach (var seccion in Enum.GetValues<Seccion>())
-        {
-            var actual = seccion == _seccion;
-            var boton = Boton(seccion.ToString().ToUpperInvariant(), _ =>
-            {
-                _seccion = seccion;
-                return Task.CompletedTask;
-            }, false);
-            boton.BackgroundColor = Colors.Transparent;
-            boton.TextColor = actual ? Lima : Atenuado;
-            boton.FontFamily = "OpenSansSemibold";
-            boton.IsEnabled = seleccionado.Estado != EstadoTorneo.Borrador || seccion == Seccion.Inscritos;
-            if (actual)
-                SemanticProperties.SetDescription(boton, $"{seccion}, sección actual");
-            var pestana = new VerticalStackLayout { Spacing = 0 };
-            pestana.Add(boton);
-            // La barra marca la pestaña activa sin depender solo del color del texto.
-            pestana.Add(new BoxView { HeightRequest = 3, Color = actual ? Lima : Colors.Transparent });
-            navegacion.Add(pestana);
-        }
-        _panel.Add(navegacion);
-        _panel.Add(new BoxView { HeightRequest = 1, Color = Borde });
         if (_seccion == Seccion.Inscritos)
             await MostrarInscripcionesAsync(db, seleccionado);
         else
             await MostrarCuadroAsync(db, seleccionado);
+    }
+
+    // Menú flotante: «Mis torneos» siempre; con un torneo abierto, sus secciones.
+    private void ActualizarMenu(Torneo? torneo)
+    {
+        async void Ir(int? seleccion, Seccion seccion)
+        {
+            _seleccion = seleccion;
+            _seccion = seccion;
+            await EjecutarAsync(_ => Task.CompletedTask);
+        }
+
+        var opciones = new List<OpcionMenu> { new("Mis torneos", () => Ir(null, _seccion), torneo is null) };
+        if (torneo is not null)
+        {
+            var borrador = torneo.Estado == EstadoTorneo.Borrador;
+            foreach (var (seccion, texto) in new[] { (Seccion.Inscritos, "Inscritos"), (Seccion.Partidos, "Partidos"), (Seccion.Cuadro, "Cuadro") })
+                opciones.Add(new OpcionMenu(texto, () => Ir(torneo.Id, seccion), _seccion == seccion, !borrador || seccion == Seccion.Inscritos));
+        }
+        _menu.Establecer(opciones);
     }
 
     private void Abrir(Torneo torneo)

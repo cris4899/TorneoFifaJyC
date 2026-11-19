@@ -34,3 +34,7 @@ Dani  · Equipo D
 - En un partido jugado, se indica el ganador con texto y se muestra el marcador. En el torneo finalizado, el campeón se destaca por nombre y equipo.
 - Ante un fallo de red, se ofrece «Reintentar». Con datos previos se conserva el cuadro y se indica que puede estar desactualizado. Sin datos previos se muestra el error con la acción de reintento.
 - Botones y campos tienen nombres legibles por el lector de pantalla. El estado y el ganador se identifican con texto. Validar navegación con teclado en Windows y la legibilidad de nombres y estados en Android.
+
+## Navegación con menú flotante
+
+Android y Windows comparten el control `MenuFlotante` (`TorneoFifaJyC/Controls`), un botón en la esquina inferior derecha que despliega las secciones. Android: Próximos, Rondas y Ajustes (la dirección del servicio ya no ocupa la pantalla principal; las rondas se eligen con chips). Windows: Mis torneos, Inscritos, Partidos y Cuadro. La paleta vive solo en `Resources/Styles/Colors.xaml`; los estilos `Tarjeta`, `BotonPrimario` y `BotonSecundario` están en `Styles.xaml`.
