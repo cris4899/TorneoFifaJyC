@@ -1,23 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controles="clr-namespace:TorneoFifaJyC.Controls"
              xmlns:vm="clr-namespace:TorneoFifaJyC.Features.Consulta"
              x:Class="TorneoFifaJyC.Features.Consulta.CuadroPage"
              x:DataType="vm:CuadroPageViewModel"
              Title="Cuadro del torneo"
              BackgroundColor="{StaticResource Fondo}">
-
-    <!-- Paleta «aspecto de torneo», alineada con GestionPage (PR #36). -->
-    <ContentPage.Resources>
-        <Color x:Key="Fondo">#0B1426</Color>
-        <Color x:Key="Superficie">#13213B</Color>
-        <Color x:Key="Borde">#22355A</Color>
-        <Color x:Key="Claro">#F2F4F5</Color>
-        <Color x:Key="Atenuado">#A3AFC4</Color>
-        <Color x:Key="Verde">#2BD46B</Color>
-        <Color x:Key="VerdeOscuro">#138A44</Color>
-        <Color x:Key="Oro">#F5C542</Color>
-    </ContentPage.Resources>
 
     <!-- Fila 0: aviso de conexión y Reintentar, fijos arriba y visibles sin desplazarse (#37). -->
     <Grid RowDefinitions="Auto,*">
@@ -34,12 +23,12 @@
             </Grid>
         </Border>
 
-        <ScrollView Grid.Row="1">
-            <VerticalStackLayout Padding="16" Spacing="12">
+        <Grid Grid.Row="1">
+        <ScrollView>
+            <VerticalStackLayout Padding="16,16,16,96" Spacing="12">
 
-                <!-- Ajustes del servicio -->
-                <Border BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" StrokeThickness="1"
-                        Padding="14" StrokeShape="RoundRectangle 10">
+                <!-- Ajustes del servicio: solo se ven desde «Ajustes» del menú flotante -->
+                <Border x:Name="AjustesPanel" IsVisible="False" Style="{StaticResource Tarjeta}">
                     <VerticalStackLayout Spacing="8">
                         <Label Text="Servicio de consulta" FontAttributes="Bold" FontFamily="OpenSansSemibold"
                                TextColor="{StaticResource Claro}" SemanticProperties.HeadingLevel="Level2" />
@@ -62,6 +51,7 @@
                     </VerticalStackLayout>
                 </Border>
 
+                <VerticalStackLayout x:Name="ContenidoPanel" Spacing="12">
                 <!-- Selección de torneo -->
                 <Picker x:Name="TorneoPicker" Title="Elige un torneo"
                         ItemsSource="{Binding TorneosDisponibles}" ItemDisplayBinding="{Binding Nombre}"
@@ -94,25 +84,19 @@
                            SemanticProperties.Description="{Binding UltimaActualizacionTexto}" />
                 </VerticalStackLayout>
 
-                <!-- Alternar vista Rondas / Próximos -->
-                <HorizontalStackLayout Spacing="8" IsVisible="{Binding MostrarContenido}">
-                    <Button Text="Rondas" Command="{Binding VerRondasComando}"
-                            BackgroundColor="{StaticResource Superficie}" TextColor="{StaticResource Claro}"
-                            BorderColor="{StaticResource Borde}" BorderWidth="1"
-                            SemanticProperties.Hint="Muestra el cuadro por rondas" />
-                    <Button Text="Próximos" Command="{Binding VerProximosComando}"
-                            BackgroundColor="{StaticResource Superficie}" TextColor="{StaticResource Claro}"
-                            BorderColor="{StaticResource Borde}" BorderWidth="1"
-                            SemanticProperties.Hint="Muestra los próximos cruces" />
-                </HorizontalStackLayout>
-
                 <!-- Vista Rondas -->
                 <VerticalStackLayout Spacing="8" IsVisible="{Binding MostrarRondas}">
-                    <Picker Title="Elige una ronda" ItemsSource="{Binding Rondas}"
-                            ItemDisplayBinding="{Binding Nombre}" SelectedItem="{Binding RondaSeleccionada}"
-                            TextColor="{StaticResource Claro}" TitleColor="{StaticResource Fondo}"
-                            BackgroundColor="{StaticResource Superficie}"
-                            SemanticProperties.Hint="Cambia la ronda que se muestra" />
+                    <CollectionView ItemsSource="{Binding Rondas}" SelectionMode="Single" SelectedItem="{Binding RondaSeleccionada}"
+                                    ItemsLayout="HorizontalList" HeightRequest="48"
+                                    SemanticProperties.Hint="Cambia la ronda que se muestra">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="{x:Null}">
+                                <Border Style="{StaticResource Tarjeta}" Padding="14,8" Margin="0,0,8,0" StrokeShape="RoundRectangle 20">
+                                    <Label Text="{Binding Nombre}" TextColor="{StaticResource Claro}" VerticalOptions="Center" />
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
                     <CollectionView ItemsSource="{Binding PartidosVisibles}">
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="vm:PartidoFila">
@@ -164,8 +148,11 @@
                        TextColor="{StaticResource Claro}" HorizontalTextAlignment="Center"
                        SemanticProperties.Description="{Binding MensajeEstado}" />
 
+                </VerticalStackLayout>
             </VerticalStackLayout>
         </ScrollView>
+        <controles:MenuFlotante x:Name="Menu" />
+        </Grid>
     </Grid>
 
 </ContentPage>

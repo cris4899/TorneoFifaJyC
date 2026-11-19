@@ -12,6 +12,16 @@
     <Color x:Key="SecondaryDarkText">#2BD46B</Color>
     <Color x:Key="Tertiary">#0B1426</Color>
 
+    <!-- Paleta «aspecto de torneo»: única fuente para Consulta, Gestión y MenuFlotante. -->
+    <Color x:Key="Fondo">#0B1426</Color>
+    <Color x:Key="Superficie">#13213B</Color>
+    <Color x:Key="Borde">#22355A</Color>
+    <Color x:Key="Claro">#F2F4F5</Color>
+    <Color x:Key="Atenuado">#A3AFC4</Color>
+    <Color x:Key="Verde">#2BD46B</Color>
+    <Color x:Key="VerdeOscuro">#138A44</Color>
+    <Color x:Key="Oro">#F5C542</Color>
+
     <Color x:Key="White">White</Color>
     <Color x:Key="Black">Black</Color>
     <Color x:Key="Magenta">#D600AA</Color>
