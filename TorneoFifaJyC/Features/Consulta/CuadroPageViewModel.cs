@@ -202,8 +202,10 @@ public sealed class CuadroPageViewModel : INotifyPropertyChanged
         catch (OperationCanceledException) { throw; }
         catch (Exception) { TorneosDisponibles = Array.Empty<Torneo>(); }
 
-        if (_torneoSeleccionado is null || TorneosDisponibles.All(t => t.Id != _torneoSeleccionado.Id))
-            TorneoSeleccionado = TorneosDisponibles.FirstOrDefault();
+        // Reapunta siempre a la instancia de la nueva lista con el mismo id para que
+        // el Picker conserve el torneo seleccionado tras recargar (mismo id = sin reinicio).
+        TorneoSeleccionado = TorneosDisponibles.FirstOrDefault(t => t.Id == _torneoSeleccionado?.Id)
+            ?? TorneosDisponibles.FirstOrDefault();
 
         Notificar(nameof(TorneosDisponibles));
         Notificar(nameof(HayTorneos));
