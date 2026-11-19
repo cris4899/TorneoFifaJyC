@@ -11,9 +11,19 @@ public sealed class TorneoDbContext(DbContextOptions<TorneoDbContext> options) :
     public DbSet<Fase> Fases => Set<Fase>();
     public DbSet<Partido> Partidos => Set<Partido>();
 
+    public DbSet<Organizador> Organizadores => Set<Organizador>();
+    public DbSet<Invitacion> Invitaciones => Set<Invitacion>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<Organizador>().HasIndex(o => o.Usuario).IsUnique();
+        var invitaciones = model.Entity<Invitacion>();
+        invitaciones.HasIndex(i => i.Codigo).IsUnique();
+        invitaciones.HasOne<Organizador>().WithMany().HasForeignKey(i => i.UsadaPorId).OnDelete(DeleteBehavior.Restrict);
+
         var torneos = model.Entity<Torneo>();
+        torneos.HasIndex(t => t.Codigo).IsUnique();
+        torneos.HasOne<Organizador>().WithMany().HasForeignKey(t => t.OrganizadorId).OnDelete(DeleteBehavior.Restrict);
         torneos.HasIndex(t => t.Nombre).IsUnique();
         torneos.Property(t => t.Estado).HasConversion<string>();
         torneos.ToTable(t =>

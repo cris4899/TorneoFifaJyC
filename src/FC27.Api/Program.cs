@@ -16,6 +16,7 @@ builder.Services.ConfigureHttpJsonOptions(opciones =>
 var rutaBase = builder.Configuration["Torneo:RutaBase"] ?? "torneo.db";
 builder.Services.AddDbContext<TorneoDbContext>(opciones => opciones.UseSqlite($"Data Source={rutaBase}"));
 builder.Services.AddScoped<IConsultaTorneos, ConsultaTorneosSqlite>();
+builder.Services.AddScoped<InscripcionesSqlite>();
 
 var app = builder.Build();
 
@@ -28,6 +29,26 @@ api.MapGet("/torneos", async (IConsultaTorneos consulta, CancellationToken ct) =
 // Cuadro ordenado por rondas o 404 si el torneo no está disponible (inexistente o borrador).
 api.MapGet("/torneos/{id:int}/cuadro", async (int id, IConsultaTorneos consulta, CancellationToken ct) =>
     await consulta.ObtenerCuadroAsync(id, ct) is { } cuadro ? Results.Ok(cuadro) : Results.NotFound());
+
+// Única escritura abierta: el alumno se apunta con el código del torneo mientras es borrador.
+api.MapGet("/inscripciones/{codigo}", async (string codigo, InscripcionesSqlite altas, CancellationToken ct) =>
+    await altas.BuscarPorCodigoAsync(codigo, ct) is { } t
+        ? Results.Ok(new { t.Nombre, Plazas = t.NumeroParticipantes })
+        : Results.NotFound());
+
+api.MapPost("/inscripciones/{codigo}", async (string codigo, DatosInscripcion datos, InscripcionesSqlite altas, CancellationToken ct) =>
+{
+    if (await altas.BuscarPorCodigoAsync(codigo, ct) is not { } t) return Results.NotFound();
+    try
+    {
+        var p = await altas.InscribirAsync(t.Id, datos, ct);
+        return Results.Created($"/api/v1/inscripciones/{t.Codigo}", new { p.Id });
+    }
+    catch (Exception e) when (e is ArgumentException or InvalidOperationException or DbUpdateException)
+    {
+        return Results.Conflict(new { error = e.Message });
+    }
+});
 
 app.Run();
 

@@ -56,6 +56,7 @@ public partial class CuadroPage : ContentPage
         [
             new OpcionMenu("Próximos", () => Mostrar(VistaCuadro.Proximos), !_ajustes && _modelo.Vista == VistaCuadro.Proximos),
             new OpcionMenu("Rondas", () => Mostrar(VistaCuadro.Rondas), !_ajustes && _modelo.Vista == VistaCuadro.Rondas),
+            new OpcionMenu("Inscribirme", () => _ = Navigation.PushModalAsync(new InscripcionPage(_config))),
             new OpcionMenu("Ajustes", () => { _ajustes = true; Aplicar(); }, _ajustes)
         ]);
     }

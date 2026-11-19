@@ -43,7 +43,7 @@ public sealed class MenuFlotante : ContentView
         {
             var pastilla = new Button
             {
-                Text = opcion.Texto, CornerRadius = 20, MinimumHeightRequest = 44, Padding = new Thickness(18, 0),
+                Text = opcion.Texto, CornerRadius = 20, MinimumHeightRequest = 48, Padding = new Thickness(18, 0),
                 IsEnabled = opcion.Habilitada,
                 BackgroundColor = opcion.Activa ? Recurso("Verde") : Recurso("Superficie"),
                 TextColor = opcion.Activa ? Recurso("Fondo") : Recurso("Claro"),
