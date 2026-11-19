@@ -66,6 +66,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="../src/FC27.Core/FC27.Core.csproj" />
+		<ProjectReference Include="../src/FC27.Data/FC27.Data.csproj" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 	</ItemGroup>

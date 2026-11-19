@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
+    <ProjectReference Include="../../src/FC27.Core/FC27.Core.csproj" />
+    <ProjectReference Include="../../src/FC27.Data/FC27.Data.csproj" />
+    <ProjectReference Include="../../src/FC27.Api/FC27.Api.csproj" />
+    <!-- La lógica de presentación de consulta no depende de MAUI, así que se
+         compila aquí para probarla sin el proyecto Android. -->
+    <Compile Include="../../TorneoFifaJyC/Features/Consulta/ConsultaCuadro.cs" Link="Consulta/ConsultaCuadro.cs" />
+    <Compile Include="../../TorneoFifaJyC/Features/Consulta/CuadroPageViewModel.cs" Link="Consulta/CuadroPageViewModel.cs" />
+    <Compile Include="../../TorneoFifaJyC/Features/Consulta/DatosFicticiosConsulta.cs" Link="Consulta/DatosFicticiosConsulta.cs" />
+    <Compile Include="../../TorneoFifaJyC/Features/Consulta/ConsultaTorneosHttp.cs" Link="Consulta/ConsultaTorneosHttp.cs" />
+    <Compile Include="../../TorneoFifaJyC/Features/Consulta/ConfiguracionConsulta.cs" Link="Consulta/ConfiguracionConsulta.cs" />
+    <None Update="cuadro-ejemplo.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
