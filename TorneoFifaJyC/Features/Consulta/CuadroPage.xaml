@@ -87,12 +87,35 @@
                 <!-- Vista Rondas -->
                 <VerticalStackLayout Spacing="8" IsVisible="{Binding MostrarRondas}">
                     <CollectionView ItemsSource="{Binding Rondas}" SelectionMode="Single" SelectedItem="{Binding RondaSeleccionada}"
-                                    ItemsLayout="HorizontalList" HeightRequest="48"
+                                    HeightRequest="56" BackgroundColor="Transparent"
                                     SemanticProperties.Hint="Cambia la ronda que se muestra">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+                        </CollectionView.ItemsLayout>
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="{x:Null}">
-                                <Border Style="{StaticResource Tarjeta}" Padding="14,8" Margin="0,0,8,0" StrokeShape="RoundRectangle 20">
-                                    <Label Text="{Binding Nombre}" TextColor="{StaticResource Claro}" VerticalOptions="Center" />
+                                <Border Padding="18,0" HeightRequest="48" MinimumWidthRequest="48" StrokeShape="RoundRectangle 24"
+                                        BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" StrokeThickness="1">
+                                    <VisualStateManager.VisualStateGroups>
+                                        <VisualStateGroupList>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="Normal">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="{StaticResource Superficie}" />
+                                                        <Setter Property="Stroke" Value="{StaticResource Borde}" />
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Selected">
+                                                    <VisualState.Setters>
+                                                        <Setter Property="BackgroundColor" Value="{StaticResource VerdeOscuro}" />
+                                                        <Setter Property="Stroke" Value="{StaticResource Verde}" />
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateGroupList>
+                                    </VisualStateManager.VisualStateGroups>
+                                    <Label Text="{Binding Nombre}" TextColor="White" VerticalOptions="Center"
+                                           FontFamily="OpenSansSemibold" />
                                 </Border>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>

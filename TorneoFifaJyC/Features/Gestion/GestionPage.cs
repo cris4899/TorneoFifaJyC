@@ -73,7 +73,10 @@ public sealed class GestionPage : ContentPage
 
     private async Task MostrarAsync(TorneoDbContext db)
     {
-        var torneos = await db.Torneos.AsNoTracking().OrderBy(t => t.Nombre).ToListAsync();
+        // Los torneos anteriores al login no tienen dueño y los ve cualquier organizador.
+        var torneos = await db.Torneos.AsNoTracking()
+            .Where(t => t.OrganizadorId == SesionOrganizador.Id || t.OrganizadorId == null)
+            .OrderBy(t => t.Nombre).ToListAsync();
         _panel.Clear();
         var seleccionado = torneos.SingleOrDefault(t => t.Id == _seleccion);
         ActualizarMenu(seleccionado);
@@ -98,6 +101,8 @@ public sealed class GestionPage : ContentPage
                 detalle.Add(Etiqueta(Estado(torneo.Estado), ColorEstado(torneo.Estado)));
                 detalle.Add(new Label { Text = $"{inscritos.GetValueOrDefault(torneo.Id)}/{torneo.NumeroParticipantes} jugadores", TextColor = Atenuado, VerticalOptions = LayoutOptions.Center });
                 datos.Add(detalle);
+                if (torneo.Estado == EstadoTorneo.Borrador && torneo.Codigo is not null)
+                    datos.Add(new Label { Text = $"Código de inscripción: {torneo.Codigo}", TextColor = Atenuado });
                 fila.Add(datos);
                 fila.Add(abrir, 1);
                 abrir.VerticalOptions = LayoutOptions.Center;
@@ -135,9 +140,25 @@ public sealed class GestionPage : ContentPage
 
                 await EjecutarAsync(async contexto =>
                     Abrir(await new InscripcionesSqlite(contexto).CrearAsync(nombreTexto!,
-                        (int)capacidad.SelectedItem, CancellationToken.None)));
+                        (int)capacidad.SelectedItem, CancellationToken.None, SesionOrganizador.Id)));
             };
             _panel.Add(crear);
+
+            Seccionar($"Cuenta: {SesionOrganizador.Usuario}");
+            var invitar = Boton("Generar invitación", async contexto =>
+            {
+                var codigo = await new AutenticacionSqlite(contexto).CrearInvitacionAsync(CancellationToken.None);
+                await DisplayAlertAsync("Invitación de un solo uso", codigo, "Cerrar");
+            }, principal: false);
+            _panel.Add(invitar);
+            _panel.Add(Boton("Cerrar sesión", _ =>
+            {
+                SesionOrganizador.Id = null;
+                SesionOrganizador.Usuario = null;
+                _seleccion = null;
+                Application.Current!.Windows[0].Page = new LoginPage(() => Application.Current!.Windows[0].Page = new AppShell());
+                return Task.CompletedTask;
+            }, principal: false));
             return;
         }
 

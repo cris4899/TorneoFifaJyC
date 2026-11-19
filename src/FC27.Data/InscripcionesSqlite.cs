@@ -6,13 +6,23 @@ namespace FC27.Data;
 /// <summary>Altas de torneos y cambios de inscripción durante el borrador.</summary>
 public sealed class InscripcionesSqlite(TorneoDbContext db)
 {
-    /// <summary>Crea un torneo en borrador con una de las capacidades admitidas.</summary>
-    public async Task<Torneo> CrearAsync(string nombre, int capacidad, CancellationToken ct)
+    // Sin 0/O ni 1/I para que el código se pueda dictar sin confusiones.
+    private const string AlfabetoCodigo = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+    /// <summary>Crea un torneo en borrador con una de las capacidades admitidas y su código de inscripción.</summary>
+    public async Task<Torneo> CrearAsync(string nombre, int capacidad, CancellationToken ct, int? organizadorId = null)
     {
         if (capacidad is not (4 or 8 or 16 or 32 or 64))
             throw new ArgumentOutOfRangeException(nameof(capacidad));
 
-        var torneo = new Torneo(0, Requerido(nombre, nameof(nombre)), capacidad, EstadoTorneo.Borrador);
+        var torneo = new Torneo(0, Requerido(nombre, nameof(nombre)), capacidad, EstadoTorneo.Borrador)
+        {
+            OrganizadorId = organizadorId,
+            Codigo = "FC27-" + string.Create(4, 0, (c, _) =>
+            {
+                for (var i = 0; i < c.Length; i++) c[i] = AlfabetoCodigo[Random.Shared.Next(AlfabetoCodigo.Length)];
+            })
+        };
         db.Torneos.Add(torneo);
         try
         {
@@ -23,6 +33,14 @@ public sealed class InscripcionesSqlite(TorneoDbContext db)
         {
             db.Entry(torneo).State = EntityState.Detached;
         }
+    }
+
+    /// <summary>Busca un torneo en borrador por su código de inscripción. Nulo si no existe o ya empezó.</summary>
+    public Task<Torneo?> BuscarPorCodigoAsync(string codigo, CancellationToken ct)
+    {
+        var limpio = codigo.Trim().ToUpperInvariant();
+        return db.Torneos.AsNoTracking()
+            .SingleOrDefaultAsync(t => t.Codigo == limpio && t.Estado == EstadoTorneo.Borrador, ct);
     }
 
     /// <summary>Añade una inscripción si el borrador todavía tiene plazas.</summary>
